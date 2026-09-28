@@ -10,9 +10,9 @@ function createParticleTexture() {
 
   const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
   gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-  gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.9)');
-  gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.35)');
-  gradient.addColorStop(0.8, 'rgba(255, 255, 255, 0.08)');
+  gradient.addColorStop(0.25, 'rgba(255, 255, 255, 0.9)');
+  gradient.addColorStop(0.55, 'rgba(255, 255, 255, 0.35)');
+  gradient.addColorStop(0.85, 'rgba(255, 255, 255, 0.08)');
   gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
   ctx.fillStyle = gradient;
@@ -21,28 +21,6 @@ function createParticleTexture() {
   const texture = new THREE.CanvasTexture(canvas);
   texture.needsUpdate = true;
   return texture;
-}
-
-// Generate volumetric 3D Heart coordinates for the "Love Spirit" core
-function createHeartCoordinates(count, scale = 0.34) {
-  const positions = new Float32Array(count * 3);
-  for (let i = 0; i < count; i++) {
-    // Parameter t along the heart contour
-    const t = Math.random() * Math.PI * 2;
-    // Volume & depth spread
-    const phi = (Math.random() - 0.5) * Math.PI;
-    const fuzz = 0.88 + Math.random() * 0.25;
-
-    // Classical parametric 3D Heart formulas
-    const xBase = 16 * Math.pow(Math.sin(t), 3);
-    const yBase = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-    const zBase = Math.sin(phi) * 6.5 * Math.sin(t) * Math.sin(t);
-
-    positions[i * 3] = xBase * scale * fuzz * Math.cos(phi * 0.3);
-    positions[i * 3 + 1] = (yBase * scale * fuzz) + 0.6; // slightly centered
-    positions[i * 3 + 2] = zBase * scale * fuzz;
-  }
-  return positions;
 }
 
 export default function ThreeZenBackground({ 
@@ -54,11 +32,12 @@ export default function ThreeZenBackground({
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
   const rendererRef = useRef(null);
+  const coreLightRef = useRef(null);
   const pulseRef = useRef(0);
   const swipeAnimRef = useRef(0);
 
   // Mouse / Touch interaction coords
-  const mouseRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0, speed: 0 });
+  const mouseRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
 
   // Update pulse trigger from props (e.g. on heart click)
   useEffect(() => {
@@ -103,137 +82,88 @@ export default function ThreeZenBackground({
 
     const particleTexture = createParticleTexture();
 
-    const primaryColor = new THREE.Color(theme?.threeColors?.primary || '#ec4899');
-    const secondaryColor = new THREE.Color(theme?.threeColors?.secondary || '#8b5cf6');
-    const accentColor = new THREE.Color(theme?.threeColors?.accent || '#f43f5e');
+    const primaryColor = new THREE.Color(theme?.threeColors?.primary || '#06b6d4');
+    const secondaryColor = new THREE.Color(theme?.threeColors?.secondary || '#6366f1');
+    const accentColor = new THREE.Color(theme?.threeColors?.accent || '#14b8a6');
 
     // =========================================================================
-    // LAYER 1: "LOVE SPIRIT HEART" (1,200 crystalline breathing heart nodes)
+    // "БЕСФОРМЕННЫЙ КОМОК ЧАСТИЦ" (Amorphous Living Spirit Chaos Clump)
+    // 3,800 particles forming a shapeless, constantly morphing cosmic blob
     // =========================================================================
-    const heartCount = 1200;
-    const heartPositions = createHeartCoordinates(heartCount, 0.35);
-    const heartOriginals = new Float32Array(heartPositions);
-    const heartColors = new Float32Array(heartCount * 3);
-    const heartPhases = new Float32Array(heartCount);
+    const particleCount = 3800;
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
 
-    for (let i = 0; i < heartCount; i++) {
-      const rand = Math.random();
-      const col = rand < 0.5 ? primaryColor : (rand < 0.85 ? accentColor : secondaryColor);
-      heartColors[i * 3] = col.r;
-      heartColors[i * 3 + 1] = col.g;
-      heartColors[i * 3 + 2] = col.b;
-      heartPhases[i] = Math.random() * Math.PI * 2;
-    }
+    // Particle seed parameters: [baseRadius, theta, phi, speed]
+    const seeds = new Float32Array(particleCount * 4);
+    // Noise variation attributes: [freqTheta, freqPhi, phase1, phase2]
+    const noiseAttrs = new Float32Array(particleCount * 4);
 
-    const heartGeom = new THREE.BufferGeometry();
-    heartGeom.setAttribute('position', new THREE.BufferAttribute(heartPositions, 3));
-    heartGeom.setAttribute('color', new THREE.BufferAttribute(heartColors, 3));
-
-    const heartMat = new THREE.PointsMaterial({
-      size: isDarkMode ? 0.65 : 0.48,
-      vertexColors: true,
-      map: particleTexture,
-      transparent: true,
-      opacity: isDarkMode ? 0.95 : 0.85,
-      blending: isDarkMode ? THREE.AdditiveBlending : THREE.NormalBlending,
-      depthWrite: false
-    });
-
-    const heartPoints = new THREE.Points(heartGeom, heartMat);
-    scene.add(heartPoints);
-
-    // =========================================================================
-    // LAYER 2: "CHAOS SPIRIT SWARM" (2,400 turbulent vortex particles)
-    // =========================================================================
-    const chaosCount = 2400;
-    const chaosPositions = new Float32Array(chaosCount * 3);
-    const chaosVelocities = new Float32Array(chaosCount * 3);
-    const chaosColors = new Float32Array(chaosCount * 3);
-    const chaosData = new Float32Array(chaosCount * 4); // [radius, theta, phi, speed]
-
-    for (let i = 0; i < chaosCount; i++) {
-      const radius = 3.5 + Math.random() * 18.0;
+    for (let i = 0; i < particleCount; i++) {
+      // Density distribution: high density near nucleus, tapering outward into wisps
+      // using pow for core clustering
+      const distFraction = Math.pow(Math.random(), 1.6);
+      const baseRadius = 1.2 + distFraction * 7.5; // radius between 1.2 and 8.7
       const theta = Math.random() * Math.PI * 2;
       const phi = (Math.random() - 0.5) * Math.PI;
-      const speed = (0.2 + Math.random() * 0.8) * (Math.random() > 0.5 ? 1 : -1);
+      const speed = (0.3 + Math.random() * 0.7) * (Math.random() > 0.5 ? 1 : -1);
 
-      chaosPositions[i * 3] = radius * Math.cos(theta) * Math.cos(phi);
-      chaosPositions[i * 3 + 1] = radius * Math.sin(theta) * Math.cos(phi);
-      chaosPositions[i * 3 + 2] = radius * Math.sin(phi) * 0.7;
+      seeds[i * 4] = baseRadius;
+      seeds[i * 4 + 1] = theta;
+      seeds[i * 4 + 2] = phi;
+      seeds[i * 4 + 3] = speed;
 
-      chaosVelocities[i * 3] = 0;
-      chaosVelocities[i * 3 + 1] = 0;
-      chaosVelocities[i * 3 + 2] = 0;
+      noiseAttrs[i * 4] = 2.0 + Math.floor(Math.random() * 4); // freqTheta (2..5)
+      noiseAttrs[i * 4 + 1] = 2.0 + Math.floor(Math.random() * 3); // freqPhi (2..4)
+      noiseAttrs[i * 4 + 2] = Math.random() * Math.PI * 2; // phase1
+      noiseAttrs[i * 4 + 3] = Math.random() * Math.PI * 2; // phase2
 
-      chaosData[i * 4] = radius;
-      chaosData[i * 4 + 1] = theta;
-      chaosData[i * 4 + 2] = phi;
-      chaosData[i * 4 + 3] = speed;
+      // Initial placement
+      positions[i * 3] = baseRadius * Math.cos(theta) * Math.cos(phi);
+      positions[i * 3 + 1] = baseRadius * Math.sin(theta) * Math.cos(phi);
+      positions[i * 3 + 2] = baseRadius * Math.sin(phi);
 
-      // Color distribution: inner is fiery/love, outer is astral spirit
-      const distRatio = Math.min(radius / 18, 1);
-      const col = distRatio < 0.45 ? primaryColor : (distRatio < 0.8 ? secondaryColor : accentColor);
-      chaosColors[i * 3] = col.r;
-      chaosColors[i * 3 + 1] = col.g;
-      chaosColors[i * 3 + 2] = col.b;
+      // Color gradation: inner core takes primary vibrant hue, outer wisps take astral accents
+      const normDist = baseRadius / 8.7;
+      let col;
+      if (normDist < 0.4) {
+        col = primaryColor;
+      } else if (normDist < 0.75) {
+        col = Math.random() < 0.6 ? secondaryColor : primaryColor;
+      } else {
+        col = Math.random() < 0.5 ? accentColor : secondaryColor;
+      }
+
+      colors[i * 3] = col.r;
+      colors[i * 3 + 1] = col.g;
+      colors[i * 3 + 2] = col.b;
     }
 
-    const chaosGeom = new THREE.BufferGeometry();
-    chaosGeom.setAttribute('position', new THREE.BufferAttribute(chaosPositions, 3));
-    chaosGeom.setAttribute('color', new THREE.BufferAttribute(chaosColors, 3));
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
-    const chaosMat = new THREE.PointsMaterial({
-      size: isDarkMode ? 0.55 : 0.42,
+    const material = new THREE.PointsMaterial({
+      size: isDarkMode ? 0.62 : 0.48,
       vertexColors: true,
       map: particleTexture,
       transparent: true,
-      opacity: isDarkMode ? 0.92 : 0.80,
+      opacity: isDarkMode ? 0.95 : 0.82,
       blending: isDarkMode ? THREE.AdditiveBlending : THREE.NormalBlending,
       depthWrite: false
     });
 
-    const chaosPoints = new THREE.Points(chaosGeom, chaosMat);
-    scene.add(chaosPoints);
+    const clumpPoints = new THREE.Points(geometry, material);
+    scene.add(clumpPoints);
 
-    // =========================================================================
-    // LAYER 3: "SPIRIT FILAMENTS" (Harmonic Infinity Curves)
-    // =========================================================================
-    const ringGroup = new THREE.Group();
-    scene.add(ringGroup);
-
-    // Spirit Infinity Ribbon 1
-    const ribbonGeom1 = new THREE.TorusGeometry(8.5, 0.05, 12, 100);
-    const ribbonMat1 = new THREE.MeshBasicMaterial({
-      color: secondaryColor,
-      wireframe: true,
-      transparent: true,
-      opacity: isDarkMode ? 0.35 : 0.28,
-      blending: isDarkMode ? THREE.AdditiveBlending : THREE.NormalBlending
-    });
-    const ribbon1 = new THREE.Mesh(ribbonGeom1, ribbonMat1);
-    ribbon1.rotation.x = Math.PI / 3;
-    ringGroup.add(ribbon1);
-
-    // Spirit Infinity Ribbon 2 (Opposing Tilt)
-    const ribbonGeom2 = new THREE.TorusGeometry(12.0, 0.04, 12, 100);
-    const ribbonMat2 = new THREE.MeshBasicMaterial({
-      color: primaryColor,
-      wireframe: true,
-      transparent: true,
-      opacity: isDarkMode ? 0.25 : 0.20,
-      blending: isDarkMode ? THREE.AdditiveBlending : THREE.NormalBlending
-    });
-    const ribbon2 = new THREE.Mesh(ribbonGeom2, ribbonMat2);
-    ribbon2.rotation.y = Math.PI / 4;
-    ringGroup.add(ribbon2);
-
-    // Central Radiant Love Core Light
-    const coreLight = new THREE.PointLight(primaryColor, isDarkMode ? 3.0 : 2.0, 30);
-    coreLight.position.set(0, 0.6, 0);
+    // Dynamic Central Point Light illuminating the amorphous clump from inside
+    const coreLight = new THREE.PointLight(primaryColor, isDarkMode ? 3.2 : 2.0, 30);
+    coreLight.position.set(0, 0, 0);
     scene.add(coreLight);
+    coreLightRef.current = coreLight;
 
     // =========================================================================
-    // 4. INTERACTION LISTENERS (Touch & Pointer Gravity Vortex)
+    // 3. INTERACTIVE POINTER / TOUCH
     // =========================================================================
     const handlePointerMove = (e) => {
       const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX) ?? 0;
@@ -256,7 +186,7 @@ export default function ThreeZenBackground({
     window.addEventListener('resize', handleResize);
 
     // =========================================================================
-    // 5. ANIMATION LOOP: "LOVE SPIRIT CHAOS"
+    // 4. ANIMATION LOOP: ORGANIC AMORPHOUS CLUMP SIMULATION
     // =========================================================================
     let animationFrameId;
     const clock = new THREE.Clock();
@@ -271,111 +201,85 @@ export default function ThreeZenBackground({
       mouseRef.current.y += (mouseRef.current.targetY - mouseRef.current.y) * 0.05;
 
       // Parallax Camera movement
-      camera.position.x = mouseRef.current.x * 2.8;
-      camera.position.y = mouseRef.current.y * 2.8;
-      camera.lookAt(0, 0.5, 0);
+      camera.position.x = mouseRef.current.x * 2.6;
+      camera.position.y = mouseRef.current.y * 2.6;
+      camera.lookAt(0, 0, 0);
 
-      // Supernova Love Shockwave decay
+      // Supernova explosion decay on like
       if (pulseRef.current > 0.005) {
-        pulseRef.current *= 0.94;
+        pulseRef.current *= 0.93;
       } else {
         pulseRef.current = 0;
       }
 
-      // Swipe vortex impulse decay
+      // Swipe twist impulse decay on card change
       if (swipeAnimRef.current > 0.005) {
-        swipeAnimRef.current *= 0.92;
+        swipeAnimRef.current *= 0.91;
       } else {
         swipeAnimRef.current = 0;
       }
 
-      // -----------------------------------------------------------------------
-      // A. "LIVING HEARTBEAT" (Lub-Dub rhythm of love)
-      // -----------------------------------------------------------------------
-      const heartRate = 2.6; // ~75 bpm
-      const beatCycle = (elapsedTime * heartRate) % (Math.PI * 2);
-      // Double beat: primary lub + secondary dub
-      const lub = Math.pow(Math.max(0, Math.sin(beatCycle)), 8) * 0.16;
-      const dub = Math.pow(Math.max(0, Math.sin(beatCycle - 0.45)), 8) * 0.10;
-      const heartBeatScale = 1 + lub + dub + (pulseRef.current * 0.5);
+      const pulseEnergy = pulseRef.current * 4.5;
+      const swipeTwist = swipeAnimRef.current * 1.8;
 
-      const heartPosArr = heartGeom.attributes.position.array;
-      for (let i = 0; i < heartCount; i++) {
-        const i3 = i * 3;
-        const phase = heartPhases[i];
-        
-        // Gentle organic shimmer / breathing
-        const shimmer = Math.sin(elapsedTime * 3 + phase) * 0.06;
-        const currentScale = heartBeatScale + shimmer;
+      // Pointer influence: fluid gravity attractor that bends the blob towards the touch
+      const touchGravX = mouseRef.current.x * 1.8;
+      const touchGravY = mouseRef.current.y * 1.8;
 
-        // Love shockwave outward burst when user taps favorite
-        const pulseBlast = pulseRef.current * (1.5 + Math.sin(phase) * 0.8);
+      const posArray = geometry.attributes.position.array;
 
-        heartPosArr[i3] = heartOriginals[i3] * currentScale + (heartOriginals[i3] > 0 ? pulseBlast : -pulseBlast);
-        heartPosArr[i3 + 1] = heartOriginals[i3 + 1] * currentScale + (heartOriginals[i3 + 1] > 0 ? pulseBlast : -pulseBlast);
-        heartPosArr[i3 + 2] = heartOriginals[i3 + 2] * currentScale + Math.cos(elapsedTime * 2 + phase) * 0.2;
-      }
-      heartGeom.attributes.position.needsUpdate = true;
-
-      // Slowly rotate and float the heart
-      heartPoints.rotation.y = elapsedTime * 0.12 + (swipeAnimRef.current * 0.9);
-      heartPoints.rotation.z = Math.sin(elapsedTime * 0.35) * 0.06;
-
-      // -----------------------------------------------------------------------
-      // B. "CHAOTIC SPIRIT SWARM" (Strange attractor & fluid vortex turbulence)
-      // -----------------------------------------------------------------------
-      const chaosPosArr = chaosGeom.attributes.position.array;
-      const swipeBoost = swipeAnimRef.current * 3.5;
-      const touchGravX = mouseRef.current.x * 2.0;
-      const touchGravY = mouseRef.current.y * 2.0;
-
-      for (let i = 0; i < chaosCount; i++) {
+      for (let i = 0; i < particleCount; i++) {
         const i3 = i * 3;
         const i4 = i * 4;
 
-        let r = chaosData[i4];
-        let theta = chaosData[i4 + 1];
-        let phi = chaosData[i4 + 2];
-        const baseSpeed = chaosData[i4 + 3];
+        const baseR = seeds[i4];
+        let theta = seeds[i4 + 1];
+        let phi = seeds[i4 + 2];
+        const speed = seeds[i4 + 3];
 
-        // Swirling angle speed + swipe burst
-        theta += (baseSpeed * 0.015) + (swipeBoost * 0.04);
-        chaosData[i4 + 1] = theta;
+        const fTheta = noiseAttrs[i4];
+        const fPhi = noiseAttrs[i4 + 1];
+        const phase1 = noiseAttrs[i4 + 2];
+        const phase2 = noiseAttrs[i4 + 3];
 
-        // Lorenz / Clifford chaotic oscillations
-        const curlX = Math.sin(elapsedTime * 0.8 + phi * 3) * 0.8;
-        const curlY = Math.cos(elapsedTime * 0.9 + theta * 2) * 0.8;
-        const curlZ = Math.sin(elapsedTime * 1.1 + r) * 0.6;
+        // Slowly swirl the angles
+        theta += (speed * 0.008) + (swipeTwist * 0.03);
+        seeds[i4 + 1] = theta;
 
-        // Supernova explosion expansion
-        const shockwavePush = pulseRef.current * (4.0 + (i % 5));
+        // Harmonic 3D turbulence waves: creates the organic, shapeless, oozing deformation
+        // Wave 1: primary blob undulation
+        const wave1 = Math.sin(theta * fTheta + elapsedTime * 1.2 + phase1) * Math.cos(phi * fPhi + elapsedTime * 0.9);
+        // Wave 2: high-frequency surface ripple
+        const wave2 = Math.sin(phi * 4.0 - elapsedTime * 1.5 + phase2) * 0.28;
+        // Wave 3: deep breathing expansion
+        const wave3 = Math.cos(baseR * 0.5 + theta * 2.0 + elapsedTime * 0.7) * 0.22;
 
-        // Effective position
-        const targetX = (r + shockwavePush) * Math.cos(theta) * Math.cos(phi) + curlX + touchGravX;
-        const targetY = (r + shockwavePush) * Math.sin(theta) * Math.cos(phi) + curlY + touchGravY;
-        const targetZ = (r + shockwavePush) * Math.sin(phi) * 0.7 + curlZ;
+        // Dynamic morphed radius of the shapeless clump
+        const morphR = baseR * (1.0 + (wave1 * 0.32) + wave2 + wave3) + pulseEnergy * (0.8 + (i % 7) * 0.4);
 
-        // Fluid spring interpolation towards chaotic trajectory
-        chaosPosArr[i3] += (targetX - chaosPosArr[i3]) * 0.08;
-        chaosPosArr[i3 + 1] += (targetY - chaosPosArr[i3 + 1]) * 0.08;
-        chaosPosArr[i3 + 2] += (targetZ - chaosPosArr[i3 + 2]) * 0.08;
+        // Current spherical position with chaotic flutter
+        const curTheta = theta + Math.sin(elapsedTime * 0.4 + phase1) * 0.12;
+        const curPhi = phi + Math.cos(elapsedTime * 0.5 + phase2) * 0.10;
+
+        const cosPhi = Math.cos(curPhi);
+        const x = morphR * Math.cos(curTheta) * cosPhi + touchGravX;
+        const y = morphR * Math.sin(curTheta) * cosPhi + touchGravY;
+        const z = morphR * Math.sin(curPhi) * 0.9;
+
+        posArray[i3] = x;
+        posArray[i3 + 1] = y;
+        posArray[i3 + 2] = z;
       }
-      chaosGeom.attributes.position.needsUpdate = true;
 
-      // Gentle overall swirl of the spirit chaos
-      chaosPoints.rotation.y = elapsedTime * 0.04;
-      chaosPoints.rotation.x = Math.sin(elapsedTime * 0.03) * 0.08;
+      geometry.attributes.position.needsUpdate = true;
 
-      // -----------------------------------------------------------------------
-      // C. SPIRIT INFINITY CURVES ROTATION
-      // -----------------------------------------------------------------------
-      ribbon1.rotation.z += 0.003 + (swipeAnimRef.current * 0.05);
-      ribbon1.rotation.y += 0.002;
-      ribbon2.rotation.z -= 0.002 + (swipeAnimRef.current * 0.04);
-      ribbon2.rotation.x += 0.001;
+      // Slowly rotate the entire amorphous clump in 3D space
+      clumpPoints.rotation.y = elapsedTime * 0.06 + (swipeAnimRef.current * 0.6);
+      clumpPoints.rotation.x = Math.sin(elapsedTime * 0.04) * 0.12;
+      clumpPoints.rotation.z = Math.cos(elapsedTime * 0.03) * 0.08;
 
-      // Pulse core light intensity
-      coreLight.intensity = (isDarkMode ? 3.0 : 2.0) + (pulseRef.current * 5.0) + (lub * 3.0);
+      // Pulse core light
+      coreLight.intensity = (isDarkMode ? 3.2 : 2.0) + (pulseRef.current * 5.0);
 
       renderer.render(scene, camera);
     };
@@ -383,7 +287,7 @@ export default function ThreeZenBackground({
     animate();
 
     // =========================================================================
-    // 6. CLEANUP ON UNMOUNT
+    // 5. CLEANUP ON UNMOUNT
     // =========================================================================
     return () => {
       cancelAnimationFrame(animationFrameId);
@@ -391,14 +295,8 @@ export default function ThreeZenBackground({
       window.removeEventListener('touchmove', handlePointerMove);
       window.removeEventListener('resize', handleResize);
 
-      heartGeom.dispose();
-      heartMat.dispose();
-      chaosGeom.dispose();
-      chaosMat.dispose();
-      ribbonGeom1.dispose();
-      ribbonMat1.dispose();
-      ribbonGeom2.dispose();
-      ribbonMat2.dispose();
+      geometry.dispose();
+      material.dispose();
       particleTexture.dispose();
 
       if (renderer.domElement && container.contains(renderer.domElement)) {
@@ -413,9 +311,13 @@ export default function ThreeZenBackground({
     if (!sceneRef.current) return;
     const scene = sceneRef.current;
 
-    const primary = new THREE.Color(theme?.threeColors?.primary || '#ec4899');
-    const secondary = new THREE.Color(theme?.threeColors?.secondary || '#8b5cf6');
-    const accent = new THREE.Color(theme?.threeColors?.accent || '#f43f5e');
+    const primary = new THREE.Color(theme?.threeColors?.primary || '#06b6d4');
+    const secondary = new THREE.Color(theme?.threeColors?.secondary || '#6366f1');
+    const accent = new THREE.Color(theme?.threeColors?.accent || '#14b8a6');
+
+    if (coreLightRef.current) {
+      coreLightRef.current.color.copy(primary);
+    }
 
     scene.traverse((obj) => {
       if (obj.isPoints && obj.geometry?.attributes?.color) {
@@ -423,20 +325,12 @@ export default function ThreeZenBackground({
         const arr = colAttr.array;
         for (let i = 0; i < arr.length / 3; i++) {
           const rand = Math.random();
-          const targetCol = rand < 0.45 ? primary : (rand < 0.78 ? secondary : accent);
+          const targetCol = rand < 0.42 ? primary : (rand < 0.78 ? secondary : accent);
           arr[i * 3] = targetCol.r;
           arr[i * 3 + 1] = targetCol.g;
           arr[i * 3 + 2] = targetCol.b;
         }
         colAttr.needsUpdate = true;
-      }
-      if (obj.isMesh && obj.material) {
-        if (obj.material.color) {
-          obj.material.color.copy(secondary);
-        }
-      }
-      if (obj.isPointLight) {
-        obj.color.copy(primary);
       }
     });
   }, [theme, isDarkMode]);
