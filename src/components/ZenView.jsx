@@ -427,11 +427,6 @@ export default function ZenView({
               <span className={`text-[11px] px-3 py-1 rounded-full uppercase tracking-wider font-semibold border ${theme.badge}`}>
                 {currentAffirmation.category || 'Гармония'}
               </span>
-              {isCardCollapsed && (
-                <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 hidden xs:inline opacity-80">
-                  Нажмите, чтобы развернуть
-                </span>
-              )}
             </div>
 
             <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
@@ -527,7 +522,7 @@ export default function ZenView({
       {/* Expanded 3D Contemplation Touch Area when card is collapsed */}
       {isCardCollapsed && (
         <div 
-          className="relative z-10 w-full min-h-[380px] flex-1 flex flex-col items-center justify-center cursor-pointer select-none py-16"
+          className="relative z-10 w-full min-h-[380px] flex-1 cursor-pointer select-none"
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -535,11 +530,7 @@ export default function ZenView({
             audioManager.triggerHaptic([10]);
             setIsCardCollapsed(false);
           }}
-        >
-          <div className="text-[11px] text-slate-500/80 dark:text-zinc-400/80 bg-white/40 dark:bg-black/30 backdrop-blur-xl px-4 py-2 rounded-full border border-white/40 dark:border-white/10 shadow-sm hover:scale-105 active:scale-95 transition-all">
-            Нажмите в любое место, чтобы развернуть
-          </div>
-        </div>
+        />
       )}
     </div>
   );
