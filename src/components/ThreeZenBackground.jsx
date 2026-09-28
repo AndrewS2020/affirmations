@@ -29,7 +29,7 @@ export default function ThreeZenBackground({
   pulseTrigger = 0, 
   swipeTrigger = 0,
   affirmationId,
-  visualMode = 'clump' // 'clump' | 'jellyfish'
+  visualMode = 'clump' // 'clump' | 'jellyfish' | 'lotus'
 }) {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -74,13 +74,13 @@ export default function ThreeZenBackground({
     };
 
     targetMorph.current = {
-      fTheta: 1.6 + pseudoRand(1) * 4.2,      // number of lobes / folds (1.6 .. 5.8)
-      fPhi: 1.2 + pseudoRand(2) * 2.8,        // vertical undulation modes (1.2 .. 4.0)
-      stretchX: 0.72 + pseudoRand(3) * 0.58,  // width factor
-      stretchY: 0.75 + pseudoRand(4) * 0.55,  // height factor
-      stretchZ: 0.68 + pseudoRand(5) * 0.50,  // depth factor
-      turbAmp: 0.16 + pseudoRand(6) * 0.22,   // surface ripple roughness
-      coreComp: 0.80 + pseudoRand(7) * 0.42   // core nucleus compactness
+      fTheta: 1.6 + pseudoRand(1) * 4.2,
+      fPhi: 1.2 + pseudoRand(2) * 2.8,
+      stretchX: 0.72 + pseudoRand(3) * 0.58,
+      stretchY: 0.75 + pseudoRand(4) * 0.55,
+      stretchZ: 0.68 + pseudoRand(5) * 0.50,
+      turbAmp: 0.16 + pseudoRand(6) * 0.22,
+      coreComp: 0.80 + pseudoRand(7) * 0.42
     };
   }, [affirmationId, swipeTrigger]);
 
@@ -142,7 +142,7 @@ export default function ThreeZenBackground({
     const disposables = [particleTexture];
 
     // =========================================================================
-    // SYSTEM A: "БЕСФОРМЕННЫЙ КОМОК ЧАСТИЦ" (Amorphous Clump Mode)
+    // SYSTEM 1: "БЕСФОРМЕННЫЙ КОМОК ЧАСТИЦ" (Amorphous Clump Mode)
     // =========================================================================
     let clumpPoints = null;
     let clumpPositions = null;
@@ -213,14 +213,13 @@ export default function ThreeZenBackground({
     }
 
     // =========================================================================
-    // SYSTEM B: "КОСМИЧЕСКАЯ МЕДУЗА" (Bioluminescent Jellyfish Mode)
-    // 4,600 particles: pulsating bell dome, waving oral curtains, trailing tentacles
+    // SYSTEM 2: "КОСМИЧЕСКАЯ МЕДУЗА" (Bioluminescent Jellyfish Mode)
     // =========================================================================
     let jellyGroup = null;
     let jellyGeometry = null;
     let jellyPositions = null;
     let jellyOrigCoords = null;
-    let jellyTypes = null; // 0: dome, 1: core, 2: oral arms, 3: tentacles
+    let jellyTypes = null;
 
     const JELLY_DOME = 2000;
     const JELLY_CORE = 400;
@@ -228,25 +227,24 @@ export default function ThreeZenBackground({
     const JELLY_TENTACLES_COUNT = 20;
     const JELLY_TENTACLES_SEGS = 70;
     const JELLY_TENTACLES = JELLY_TENTACLES_COUNT * JELLY_TENTACLES_SEGS; // 1400
-    const jellyTotal = JELLY_DOME + JELLY_CORE + JELLY_ARMS + JELLY_TENTACLES; // 4600
+    const jellyTotal = JELLY_DOME + JELLY_CORE + JELLY_ARMS + JELLY_TENTACLES;
 
     if (visualMode === 'jellyfish') {
       jellyGroup = new THREE.Group();
       scene.add(jellyGroup);
 
       jellyPositions = new Float32Array(jellyTotal * 3);
-      jellyOrigCoords = new Float32Array(jellyTotal * 4); // [u, theta, baseY, index]
+      jellyOrigCoords = new Float32Array(jellyTotal * 4);
       jellyTypes = new Uint8Array(jellyTotal);
       const jellyColors = new Float32Array(jellyTotal * 3);
 
       let idx = 0;
 
-      // 1. Bell Dome (Купол медузы)
+      // 1. Dome
       for (let i = 0; i < JELLY_DOME; i++) {
-        const u = Math.sqrt(Math.random()); // radial fraction from 0 to 1
+        const u = Math.sqrt(Math.random());
         const theta = Math.random() * Math.PI * 2;
         const radius = u * 4.6;
-        // Parabolic dome curved downwards at rims
         const baseY = 2.6 - Math.pow(u, 2.2) * 3.4;
         const thickness = (Math.random() - 0.5) * 0.25;
 
@@ -261,7 +259,6 @@ export default function ThreeZenBackground({
 
         jellyTypes[idx] = 0;
 
-        // Color: apex is primary, rim is accent/secondary
         const col = u < 0.4 ? primaryColor : (u < 0.8 ? secondaryColor : accentColor);
         jellyColors[idx * 3] = col.r;
         jellyColors[idx * 3 + 1] = col.g;
@@ -270,7 +267,7 @@ export default function ThreeZenBackground({
         idx++;
       }
 
-      // 2. Inner Glowing Organ Core
+      // 2. Core
       for (let i = 0; i < JELLY_CORE; i++) {
         const r = Math.pow(Math.random(), 1.5) * 1.8;
         const theta = Math.random() * Math.PI * 2;
@@ -287,7 +284,6 @@ export default function ThreeZenBackground({
 
         jellyTypes[idx] = 1;
 
-        // High intensity primary/accent glow
         const col = Math.random() < 0.6 ? primaryColor : accentColor;
         jellyColors[idx * 3] = col.r;
         jellyColors[idx * 3 + 1] = col.g;
@@ -296,10 +292,10 @@ export default function ThreeZenBackground({
         idx++;
       }
 
-      // 3. Oral Arms / Ribbons (Фалды в центре)
+      // 3. Oral Arms
       for (let i = 0; i < JELLY_ARMS; i++) {
-        const armIdx = i % 4; // 4 main oral arms
-        const progress = Math.random(); // 0 at dome, 1 at bottom
+        const armIdx = i % 4;
+        const progress = Math.random();
         const baseY = 0.8 - progress * 5.5;
         const baseRadius = 0.5 + Math.sin(progress * Math.PI) * 1.0;
         const theta = (armIdx * Math.PI / 2) + progress * 2.5 + (Math.random() - 0.5) * 0.4;
@@ -323,14 +319,14 @@ export default function ThreeZenBackground({
         idx++;
       }
 
-      // 4. Trailing Tentacles (Светящиеся длинные щупальца)
+      // 4. Tentacles
       for (let t = 0; t < JELLY_TENTACLES_COUNT; t++) {
         const tentacleTheta = (t / JELLY_TENTACLES_COUNT) * Math.PI * 2;
         const rimRadius = 4.3 + (Math.random() - 0.5) * 0.4;
         const rimY = -0.7;
 
         for (let s = 0; s < JELLY_TENTACLES_SEGS; s++) {
-          const depthFraction = s / JELLY_TENTACLES_SEGS; // 0 to 1
+          const depthFraction = s / JELLY_TENTACLES_SEGS;
           const y = rimY - depthFraction * 13.5;
 
           jellyPositions[idx * 3] = rimRadius * Math.cos(tentacleTheta);
@@ -340,11 +336,10 @@ export default function ThreeZenBackground({
           jellyOrigCoords[idx * 4] = depthFraction;
           jellyOrigCoords[idx * 4 + 1] = tentacleTheta;
           jellyOrigCoords[idx * 4 + 2] = y;
-          jellyOrigCoords[idx * 4 + 3] = t; // tentacle index
+          jellyOrigCoords[idx * 4 + 3] = t;
 
           jellyTypes[idx] = 3;
 
-          // Bioluminescent gradation: top is secondary, trailing tips are fairy starlight
           const col = depthFraction < 0.4 ? secondaryColor : (depthFraction < 0.8 ? accentColor : primaryColor);
           jellyColors[idx * 3] = col.r;
           jellyColors[idx * 3 + 1] = col.g;
@@ -374,7 +369,151 @@ export default function ThreeZenBackground({
     }
 
     // =========================================================================
-    // 3. INTERACTIVE POINTER / TOUCH
+    // SYSTEM 3: "ИНОПЛАНЕТНЫЙ РАСПУСКАЮЩИЙСЯ ЛОТОС" (Alien Blooming Lotus Mode)
+    // 4,800 particles: 3 tiers of crystalline petals, glowing stamen & rising spores
+    // =========================================================================
+    let lotusGroup = null;
+    let lotusGeometry = null;
+    let lotusPositions = null;
+    let lotusOrigCoords = null; // [u, v, layer, petalIdx]
+    let lotusTypes = null; // 0: petals, 1: stamen core, 2: ascending spores
+
+    const LOTUS_PETAL_LAYERS = 3;
+    const LOTUS_PETALS_PER_LAYER = 8;
+    const LOTUS_PARTICLES_PER_PETAL = 110;
+    const LOTUS_PETALS_TOTAL = LOTUS_PETAL_LAYERS * LOTUS_PETALS_PER_LAYER * LOTUS_PARTICLES_PER_PETAL; // 2640
+    const LOTUS_STAMEN_COUNT = 960;
+    const LOTUS_SPORES_COUNT = 1200;
+    const lotusTotal = LOTUS_PETALS_TOTAL + LOTUS_STAMEN_COUNT + LOTUS_SPORES_COUNT; // 4800
+
+    if (visualMode === 'lotus') {
+      lotusGroup = new THREE.Group();
+      scene.add(lotusGroup);
+
+      lotusPositions = new Float32Array(lotusTotal * 3);
+      lotusOrigCoords = new Float32Array(lotusTotal * 4);
+      lotusTypes = new Uint8Array(lotusTotal);
+      const lotusColors = new Float32Array(lotusTotal * 3);
+
+      let lIdx = 0;
+
+      // 1. Petals (3 Layers of 8 Alien Crystalline Blooming Petals)
+      for (let layer = 0; layer < LOTUS_PETAL_LAYERS; layer++) {
+        const layerAngleOffset = layer * (Math.PI / 8); // stagger layers
+        const layerReach = 5.6 - (layer * 1.2); // inner petals are smaller
+
+        for (let p = 0; p < LOTUS_PETALS_PER_LAYER; p++) {
+          const petalBaseAngle = (p / LOTUS_PETALS_PER_LAYER) * Math.PI * 2 + layerAngleOffset;
+
+          for (let i = 0; i < LOTUS_PARTICLES_PER_PETAL; i++) {
+            const u = Math.random(); // 0 at base, 1 at tip
+            const v = (Math.random() - 0.5) * 2; // -1 to 1 across width
+            const petalWidth = Math.sin(u * Math.PI) * (0.85 - layer * 0.15) * (1.0 - u * 0.25);
+
+            // Base position in open state
+            const r = (u * layerReach) + 0.3;
+            const baseY = (u * 1.5) - (layer * 0.4) - 0.8;
+
+            const x = (r * Math.cos(petalBaseAngle)) - (v * petalWidth * Math.sin(petalBaseAngle));
+            const y = baseY;
+            const z = (r * Math.sin(petalBaseAngle)) + (v * petalWidth * Math.cos(petalBaseAngle));
+
+            lotusPositions[lIdx * 3] = x;
+            lotusPositions[lIdx * 3 + 1] = y;
+            lotusPositions[lIdx * 3 + 2] = z;
+
+            lotusOrigCoords[lIdx * 4] = u;
+            lotusOrigCoords[lIdx * 4 + 1] = v;
+            lotusOrigCoords[lIdx * 4 + 2] = layer;
+            lotusOrigCoords[lIdx * 4 + 3] = petalBaseAngle;
+
+            lotusTypes[lIdx] = 0;
+
+            // Gradient: base is deep primary, tips are ethereal bioluminescent accent
+            const col = u < 0.4 ? primaryColor : (u < 0.8 ? secondaryColor : accentColor);
+            lotusColors[lIdx * 3] = col.r;
+            lotusColors[lIdx * 3 + 1] = col.g;
+            lotusColors[lIdx * 3 + 2] = col.b;
+
+            lIdx++;
+          }
+        }
+      }
+
+      // 2. Central Alien Seed Crystal & Stamen Filaments
+      for (let s = 0; s < LOTUS_STAMEN_COUNT; s++) {
+        const isCore = s < 300;
+        const r = isCore ? (Math.random() * 1.2) : (0.4 + Math.random() * 1.6);
+        const theta = Math.random() * Math.PI * 2;
+        const progress = Math.random();
+        const y = isCore ? ((Math.random() - 0.5) * 0.6 - 0.6) : (-0.6 + progress * 2.2);
+
+        lotusPositions[lIdx * 3] = r * Math.cos(theta);
+        lotusPositions[lIdx * 3 + 1] = y;
+        lotusPositions[lIdx * 3 + 2] = r * Math.sin(theta);
+
+        lotusOrigCoords[lIdx * 4] = r;
+        lotusOrigCoords[lIdx * 4 + 1] = theta;
+        lotusOrigCoords[lIdx * 4 + 2] = progress;
+        lotusOrigCoords[lIdx * 4 + 3] = s;
+
+        lotusTypes[lIdx] = 1;
+
+        const col = isCore ? primaryColor : accentColor;
+        lotusColors[lIdx * 3] = col.r;
+        lotusColors[lIdx * 3 + 1] = col.g;
+        lotusColors[lIdx * 3 + 2] = col.b;
+
+        lIdx++;
+      }
+
+      // 3. Ascending Starlight Spores & Pollen Swarm
+      for (let sp = 0; sp < LOTUS_SPORES_COUNT; sp++) {
+        const radius = 0.5 + Math.random() * 8.5;
+        const theta = Math.random() * Math.PI * 2;
+        const y = -2.0 + Math.random() * 14.0;
+
+        lotusPositions[lIdx * 3] = radius * Math.cos(theta);
+        lotusPositions[lIdx * 3 + 1] = y;
+        lotusPositions[lIdx * 3 + 2] = radius * Math.sin(theta);
+
+        lotusOrigCoords[lIdx * 4] = radius;
+        lotusOrigCoords[lIdx * 4 + 1] = theta;
+        lotusOrigCoords[lIdx * 4 + 2] = y; // original height
+        lotusOrigCoords[lIdx * 4 + 3] = Math.random() * Math.PI * 2; // phase
+
+        lotusTypes[lIdx] = 2;
+
+        const randChoice = Math.random();
+        const col = randChoice < 0.4 ? primaryColor : (randChoice < 0.75 ? secondaryColor : accentColor);
+        lotusColors[lIdx * 3] = col.r;
+        lotusColors[lIdx * 3 + 1] = col.g;
+        lotusColors[lIdx * 3 + 2] = col.b;
+
+        lIdx++;
+      }
+
+      lotusGeometry = new THREE.BufferGeometry();
+      lotusGeometry.setAttribute('position', new THREE.BufferAttribute(lotusPositions, 3));
+      lotusGeometry.setAttribute('color', new THREE.BufferAttribute(lotusColors, 3));
+
+      const lotusMaterial = new THREE.PointsMaterial({
+        size: isDarkMode ? 0.31 : 0.24,
+        vertexColors: true,
+        map: particleTexture,
+        transparent: true,
+        opacity: isDarkMode ? 0.95 : 0.85,
+        blending: isDarkMode ? THREE.AdditiveBlending : THREE.NormalBlending,
+        depthWrite: false
+      });
+
+      const lotusMesh = new THREE.Points(lotusGeometry, lotusMaterial);
+      lotusGroup.add(lotusMesh);
+      disposables.push(lotusGeometry, lotusMaterial);
+    }
+
+    // =========================================================================
+    // 4. INTERACTIVE POINTER / TOUCH
     // =========================================================================
     const handlePointerMove = (e) => {
       const clientX = e.clientX ?? (e.touches && e.touches[0]?.clientX) ?? 0;
@@ -397,7 +536,7 @@ export default function ThreeZenBackground({
     window.addEventListener('resize', handleResize);
 
     // =========================================================================
-    // 4. ANIMATION LOOP
+    // 5. ANIMATION LOOP
     // =========================================================================
     let animationFrameId;
     const clock = new THREE.Clock();
@@ -438,7 +577,6 @@ export default function ThreeZenBackground({
         const pulseEnergy = pulseRef.current * 3.8;
         const swipeTwist = swipeAnimRef.current * 0.8;
 
-        // Smooth fluid lerp of morphing parameters
         const m = currentMorph.current;
         const tm = targetMorph.current;
         const lerp = 0.024;
@@ -492,7 +630,6 @@ export default function ThreeZenBackground({
 
         clumpGeometry.attributes.position.needsUpdate = true;
 
-        // Continuous rotation around tilted axis
         const axisTiltX = 0.32 + Math.sin(slowTime * 0.4) * 0.06;
         const axisTiltZ = 0.16 + Math.cos(slowTime * 0.3) * 0.05;
 
@@ -507,25 +644,20 @@ export default function ThreeZenBackground({
       // ANIMATION: JELLYFISH MODE
       // -----------------------------------------------------------------------
       if (visualMode === 'jellyfish' && jellyGeometry && jellyGroup) {
-        // Hypnotic swimming cycle: ~3.2s per propulsion stroke
         const swimSpeed = 1.95 + (pulseRef.current * 3.0);
         const swimTime = elapsedTime * swimSpeed;
-        const stroke = (Math.sin(swimTime) + 1) * 0.5; // 0 to 1
-        const strokeContract = Math.pow(Math.max(0, Math.sin(swimTime)), 3); // sharp contraction
-        const strokePropulsion = Math.sin(swimTime) * 1.2; // upward push
+        const strokeContract = Math.pow(Math.max(0, Math.sin(swimTime)), 3);
+        const strokePropulsion = Math.sin(swimTime) * 1.2;
 
-        // Jellyfish posture: tilts towards touch direction
         const targetTiltZ = -mouseRef.current.x * 0.35;
         const targetTiltX = mouseRef.current.y * 0.30;
         jellyGroup.rotation.z += (targetTiltZ - jellyGroup.rotation.z) * 0.05;
         jellyGroup.rotation.x += (targetTiltX - jellyGroup.rotation.x) * 0.05;
 
-        // Floating posture position
         jellyGroup.position.x += ((mouseRef.current.x * 1.8) - jellyGroup.position.x) * 0.04;
         const floatY = 1.0 + strokePropulsion * 0.6 + (pulseRef.current * 2.5);
         jellyGroup.position.y += (floatY - jellyGroup.position.y) * 0.06;
 
-        // Gentle yaw rotation on swipe
         jellyGroup.rotation.y = (elapsedTime * 0.08) + (swipeAnimRef.current * 1.2);
 
         const pos = jellyGeometry.attributes.position.array;
@@ -541,16 +673,13 @@ export default function ThreeZenBackground({
           const p4 = jellyOrigCoords[i4 + 3];
 
           if (type === 0) {
-            // --- Dome Particle ---
             const u = p1;
             const theta = p2;
             const baseY = p3;
 
-            // Contraction shrinks radius inwards during thrust
             const rContraction = 1.0 - (strokeContract * 0.30 * u);
             const curR = u * 4.6 * rContraction;
 
-            // Ruffled rim wave
             const rimWave = u > 0.6 ? Math.sin(theta * 8.0 + elapsedTime * 2.5) * 0.22 * u : 0;
             const y = baseY + (strokeContract * 0.6) + rimWave;
 
@@ -558,7 +687,6 @@ export default function ThreeZenBackground({
             pos[i3 + 1] = y;
             pos[i3 + 2] = curR * Math.sin(theta);
           } else if (type === 1) {
-            // --- Core Organ ---
             const r = p1;
             const theta = p2;
             const baseY = p3;
@@ -568,13 +696,11 @@ export default function ThreeZenBackground({
             pos[i3 + 1] = baseY + strokePropulsion * 0.3;
             pos[i3 + 2] = (r + pulseGlow) * Math.sin(theta);
           } else if (type === 2) {
-            // --- Oral Arms Curtains ---
             const progress = p1;
             const theta = p2;
             const baseY = p3;
             const armIdx = p4;
 
-            // Fluid lag wave down the curtain
             const lag = progress * 2.2;
             const ruffleX = Math.sin(elapsedTime * 2.2 - lag + armIdx) * (0.3 + progress * 0.6);
             const ruffleZ = Math.cos(elapsedTime * 2.0 - lag + armIdx) * (0.3 + progress * 0.5);
@@ -584,22 +710,18 @@ export default function ThreeZenBackground({
             pos[i3 + 1] = baseY - (strokePropulsion * progress * 0.4);
             pos[i3 + 2] = r * Math.sin(theta) + ruffleZ;
           } else if (type === 3) {
-            // --- Trailing Tentacles ---
-            const depth = p1; // 0 to 1
+            const depth = p1;
             const tTheta = p2;
             const baseY = p3;
             const tIdx = p4;
 
-            // Wave lag traveling down the tentacle
             const waveLag = depth * 3.8;
             const tentacleRadius = 4.3 * (1.0 - strokeContract * 0.28);
 
-            // Flowing currents in water
             const flowX = Math.sin(swimTime - waveLag + tIdx * 0.3) * (0.25 + depth * 1.4);
             const flowZ = Math.cos(swimTime * 0.85 - waveLag + tIdx * 0.3) * (0.25 + depth * 1.2);
             const swirlTwist = Math.sin(elapsedTime * 0.5 + depth * 2.0) * 0.4;
 
-            // Upward drag stretch when propelling
             const dragLift = strokePropulsion * (1.0 - depth) * 0.5;
 
             pos[i3] = tentacleRadius * Math.cos(tTheta + swirlTwist) + flowX;
@@ -609,10 +731,113 @@ export default function ThreeZenBackground({
         }
 
         jellyGeometry.attributes.position.needsUpdate = true;
-
-        // Core light pulses with jellyfish stroke
         coreLight.position.set(jellyGroup.position.x, jellyGroup.position.y + 1.2, jellyGroup.position.z);
         coreLight.intensity = (isDarkMode ? 2.8 : 1.8) + (strokeContract * 2.5) + (pulseRef.current * 4.0);
+      }
+
+      // -----------------------------------------------------------------------
+      // ANIMATION: LOTUS MODE (Alien Blooming Lotus)
+      // -----------------------------------------------------------------------
+      if (visualMode === 'lotus' && lotusGeometry && lotusGroup) {
+        // Hypnotic 8-second blooming breath cycle: 0 (closed crystal bud) to 1 (full cosmic bloom)
+        const bloomTime = elapsedTime * 0.55;
+        const naturalBloom = (Math.sin(bloomTime) + 1.0) * 0.5; // 0 to 1
+        const superBloom = Math.min(naturalBloom + pulseRef.current * 0.6, 1.35); // expands on like!
+
+        // Alien Lotus posture: tilts toward pointer/touch
+        const targetTiltX = 0.55 + mouseRef.current.y * 0.35; // default tilted towards viewer
+        const targetTiltZ = -mouseRef.current.x * 0.30;
+        lotusGroup.rotation.x += (targetTiltX - lotusGroup.rotation.x) * 0.05;
+        lotusGroup.rotation.z += (targetTiltZ - lotusGroup.rotation.z) * 0.05;
+
+        // Continuous slow celestial spin on stem
+        lotusGroup.rotation.y = (elapsedTime * 0.09) + (swipeAnimRef.current * 1.4);
+
+        const pos = lotusGeometry.attributes.position.array;
+
+        for (let i = 0; i < lotusTotal; i++) {
+          const i3 = i * 3;
+          const i4 = i * 4;
+          const type = lotusTypes[i];
+
+          const p1 = lotusOrigCoords[i4];
+          const p2 = lotusOrigCoords[i4 + 1];
+          const p3 = lotusOrigCoords[i4 + 2];
+          const p4 = lotusOrigCoords[i4 + 3];
+
+          if (type === 0) {
+            // --- Crystalline Petal Particle ---
+            const u = p1; // length fraction (0 to 1)
+            const v = p2; // width fraction (-1 to 1)
+            const layer = p3; // 0: outer, 1: mid, 2: inner
+            const petalBaseAngle = p4;
+
+            const layerReach = 5.8 - (layer * 1.3);
+            const petalWidth = Math.sin(u * Math.PI) * (0.85 - layer * 0.14) * (1.0 - u * 0.22);
+
+            // Blooming physics:
+            // When closed (superBloom low): petals stand upright like a glowing chalice
+            // When open (superBloom high): petals unfold outward and curve downward at the tips
+            const layerBloomLag = Math.max(0, superBloom - layer * 0.12);
+            const bloomExpansion = 0.4 + layerBloomLag * 0.85;
+
+            // Height and curve
+            const uprightHeight = (u * 3.8) * (1.1 - layerBloomLag * 0.75);
+            const tipArch = Math.sin(u * Math.PI) * 1.1 * (1.0 - layerBloomLag * 0.4);
+            const tipOutwardCurl = Math.pow(Math.max(0, u - 0.65), 2) * 3.5 * layerBloomLag;
+            const tipDrop = Math.pow(Math.max(0, u - 0.65), 2) * 2.2 * layerBloomLag;
+
+            const r = (u * layerReach * bloomExpansion) + tipOutwardCurl + 0.3;
+            const y = uprightHeight + tipArch - tipDrop - 0.8;
+
+            // Subtle organic breathing flutter on petal margins
+            const flutter = Math.sin(elapsedTime * 2.0 + u * 4.0 + petalBaseAngle) * 0.08 * u;
+
+            const x = (r * Math.cos(petalBaseAngle)) - (v * petalWidth * Math.sin(petalBaseAngle));
+            const z = (r * Math.sin(petalBaseAngle)) + (v * petalWidth * Math.cos(petalBaseAngle));
+
+            pos[i3] = x;
+            pos[i3 + 1] = y + flutter;
+            pos[i3 + 2] = z;
+          } else if (type === 1) {
+            // --- Alien Crystal Core & Stamen ---
+            const r = p1;
+            const theta = p2;
+            const progress = p3;
+            const sIdx = p4;
+
+            // Stamens breathe and shimmer upwards
+            const coreShimmer = Math.sin(elapsedTime * 3.0 + sIdx) * 0.12;
+            const lift = superBloom * 0.4;
+
+            pos[i3] = (r + coreShimmer * 0.2) * Math.cos(theta);
+            pos[i3 + 1] = -0.6 + (progress * 2.2) + lift + coreShimmer;
+            pos[i3 + 2] = (r + coreShimmer * 0.2) * Math.sin(theta);
+          } else if (type === 2) {
+            // --- Ascending Starlight Spores (Cosmic Pollen) ---
+            const baseRadius = p1;
+            let theta = p2;
+            const initialY = p3;
+            const phase = p4;
+
+            // Anti-gravity spiral rise
+            const speed = 0.8 + (phase % 1) * 0.6;
+            const currentY = ((initialY + elapsedTime * speed + 2.0) % 16.0) - 2.0;
+            const spiralTheta = theta + (elapsedTime * 0.3) + (currentY * 0.2);
+
+            const spreadRadius = baseRadius + (currentY > 0 ? currentY * 0.3 : 0);
+            const wobble = Math.sin(elapsedTime * 1.5 + phase) * 0.25;
+
+            pos[i3] = (spreadRadius + wobble) * Math.cos(spiralTheta);
+            pos[i3 + 1] = currentY;
+            pos[i3 + 2] = (spreadRadius + wobble) * Math.sin(spiralTheta);
+          }
+        }
+
+        lotusGeometry.attributes.position.needsUpdate = true;
+
+        coreLight.position.set(lotusGroup.position.x, lotusGroup.position.y + 0.5, lotusGroup.position.z);
+        coreLight.intensity = (isDarkMode ? 3.0 : 2.0) + (superBloom * 2.8) + (pulseRef.current * 4.0);
       }
 
       renderer.render(scene, camera);
@@ -621,7 +846,7 @@ export default function ThreeZenBackground({
     animate();
 
     // =========================================================================
-    // 5. CLEANUP ON UNMOUNT
+    // 6. CLEANUP ON UNMOUNT
     // =========================================================================
     return () => {
       cancelAnimationFrame(animationFrameId);

@@ -225,19 +225,25 @@ export default function ZenView({
             <span>3D</span>
           </button>
 
-          {/* 3D Visual Style Quick Switcher (Clump vs Jellyfish) */}
+          {/* 3D Visual Style Quick Switcher (Clump -> Jellyfish -> Lotus) */}
           {is3DEnabled && (
             <button
               onClick={() => {
                 audioManager.triggerHaptic([10]);
-                const nextMode = visualMode === 'clump' ? 'jellyfish' : 'clump';
+                const modes = ['clump', 'jellyfish', 'lotus'];
+                const nextIdx = (modes.indexOf(visualMode) + 1) % modes.length;
+                const nextMode = modes[nextIdx];
                 setVisualMode(nextMode);
                 localStorage.setItem('zen_visual_mode', nextMode);
               }}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-full backdrop-blur-xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-zinc-900/50 text-xs font-medium text-slate-700 dark:text-zinc-200 active:scale-90 transition-all shadow-sm"
-              title={visualMode === 'clump' ? "Стиль: Космический комок (нажмите для Медузы)" : "Стиль: Медуза (нажмите для Сгустка)"}
+              title="Сменить стиль 3D"
             >
-              <span className="text-xs">{visualMode === 'clump' ? '🌌 Сгусток' : '🪼 Медуза'}</span>
+              <span className="text-xs">
+                {visualMode === 'clump' && '🌌 Сгусток'}
+                {visualMode === 'jellyfish' && '🪼 Медуза'}
+                {visualMode === 'lotus' && '🪷 Лотос'}
+              </span>
             </button>
           )}
 
@@ -305,20 +311,21 @@ export default function ZenView({
             <div className="text-xs font-medium text-slate-500 dark:text-zinc-400 mb-2 px-1">
               3D Стиль визуализации
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-1.5">
               <button
                 onClick={() => {
                   setVisualMode('clump');
                   localStorage.setItem('zen_visual_mode', 'clump');
                   audioManager.triggerHaptic([10]);
                 }}
-                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-2xl border text-xs font-medium transition-all ${
+                className={`flex flex-col items-center justify-center gap-1 py-2 px-1.5 rounded-2xl border text-[11px] font-medium transition-all ${
                   visualMode === 'clump'
-                    ? 'bg-[#7C6CF0]/15 text-[#6A5BF5] dark:text-[#A78BFA] border-[#7C6CF0]/40 font-semibold'
+                    ? 'bg-[#7C6CF0]/15 text-[#6A5BF5] dark:text-[#A78BFA] border-[#7C6CF0]/40 font-semibold shadow-sm'
                     : 'bg-white/50 dark:bg-white/5 text-slate-500 dark:text-zinc-400 border-white/40 dark:border-white/5'
                 }`}
               >
-                <span>🌌 Сгусток плазмы</span>
+                <span className="text-base">🌌</span>
+                <span>Сгусток</span>
               </button>
 
               <button
@@ -327,13 +334,30 @@ export default function ZenView({
                   localStorage.setItem('zen_visual_mode', 'jellyfish');
                   audioManager.triggerHaptic([10]);
                 }}
-                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-2xl border text-xs font-medium transition-all ${
+                className={`flex flex-col items-center justify-center gap-1 py-2 px-1.5 rounded-2xl border text-[11px] font-medium transition-all ${
                   visualMode === 'jellyfish'
-                    ? 'bg-[#7C6CF0]/15 text-[#6A5BF5] dark:text-[#A78BFA] border-[#7C6CF0]/40 font-semibold'
+                    ? 'bg-[#7C6CF0]/15 text-[#6A5BF5] dark:text-[#A78BFA] border-[#7C6CF0]/40 font-semibold shadow-sm'
                     : 'bg-white/50 dark:bg-white/5 text-slate-500 dark:text-zinc-400 border-white/40 dark:border-white/5'
                 }`}
               >
-                <span>🪼 Био-медуза</span>
+                <span className="text-base">🪼</span>
+                <span>Медуза</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setVisualMode('lotus');
+                  localStorage.setItem('zen_visual_mode', 'lotus');
+                  audioManager.triggerHaptic([10]);
+                }}
+                className={`flex flex-col items-center justify-center gap-1 py-2 px-1.5 rounded-2xl border text-[11px] font-medium transition-all ${
+                  visualMode === 'lotus'
+                    ? 'bg-[#7C6CF0]/15 text-[#6A5BF5] dark:text-[#A78BFA] border-[#7C6CF0]/40 font-semibold shadow-sm'
+                    : 'bg-white/50 dark:bg-white/5 text-slate-500 dark:text-zinc-400 border-white/40 dark:border-white/5'
+                }`}
+              >
+                <span className="text-base">🪷</span>
+                <span>Лотос</span>
               </button>
             </div>
           </div>
