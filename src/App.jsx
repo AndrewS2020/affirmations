@@ -317,31 +317,29 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen text-slate-900 dark:text-zinc-100 flex flex-col justify-between selection:bg-[#8B7CF6] selection:text-white transition-colors duration-300">
+    <div className="h-[100dvh] text-slate-900 dark:text-zinc-100 flex flex-col selection:bg-[#8B7CF6] selection:text-white transition-colors duration-300">
       {/* Top Mobile Bar */}
-      <header className="safe-top px-4 pt-3 pb-2 flex items-center justify-between border-b border-[#C9BDF8]/40 dark:border-zinc-900/80 bg-white/70 dark:bg-zinc-950/70 backdrop-blur-xl sticky top-0 z-30 transition-colors">
+      <header className="safe-top px-4 pt-3 pb-2.5 flex items-center justify-between bg-white/60 dark:bg-zinc-950/60 backdrop-blur-2xl sticky top-0 z-30 transition-colors">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#8B7CF6] via-[#C084FC] to-[#4FD8C0] p-[1.5px] flex items-center justify-center shadow-lg shadow-[#7C6CF0]/25">
-            <div className="w-full h-full bg-white dark:bg-zinc-950 rounded-full flex items-center justify-center">
-              <Sparkles className="w-3.5 h-3.5 text-[#7C6CF0] dark:text-[#A78BFA]" />
-            </div>
+          <div className="w-8 h-8 rounded-2xl bg-gradient-to-tr from-[#8B7CF6] via-[#C084FC] to-[#4FD8C0] flex items-center justify-center shadow-md shadow-[#7C6CF0]/25">
+            <Sparkles className="w-4 h-4 text-white" />
           </div>
-          <h1 className="text-base font-bold tracking-tight bg-gradient-to-r from-[#23203A] via-[#6A5BF5] to-[#3BAF99] dark:from-zinc-100 dark:via-zinc-200 dark:to-zinc-400 bg-clip-text text-transparent">
+          <h1 className="text-base font-bold tracking-tight text-slate-800 dark:text-zinc-100">
             Аффирмации
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* Theme Toggle Button */}
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-full bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md hover:bg-white dark:hover:bg-zinc-800 border border-[#C9BDF8]/60 dark:border-zinc-800 text-slate-600 dark:text-zinc-300 active:scale-95 transition-all shadow-sm"
+            className="p-2.5 rounded-full bg-white/70 dark:bg-zinc-900/60 active:scale-90 text-slate-600 dark:text-zinc-300 transition-all shadow-sm"
             title={isDarkMode ? 'Переключить на светлую тему' : 'Переключить на темную тему'}
           >
             {isDarkMode ? (
-              <Sun className="w-4 h-4 text-amber-400 animate-in spin-in-180 duration-300" />
+              <Sun className="w-4 h-4 text-amber-400" />
             ) : (
-              <Moon className="w-4 h-4 text-[#7C6CF0] animate-in spin-in-180 duration-300" />
+              <Moon className="w-4 h-4 text-[#7C6CF0]" />
             )}
           </button>
 
@@ -351,10 +349,10 @@ export default function App() {
               audioManager.triggerHaptic([15]);
               setCreateEditModalData({ isOpen: true, affirmation: null });
             }}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md hover:bg-white dark:hover:bg-zinc-800 border border-[#C9BDF8]/60 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 text-xs font-semibold active:scale-95 transition-all shadow-sm"
+            className="p-2.5 rounded-full bg-gradient-to-r from-[#8B7CF6] to-[#6A5BF5] active:scale-90 text-white transition-all shadow-md shadow-[#7C6CF0]/25"
+            title="Создать аффирмацию"
           >
-            <Plus className="w-3.5 h-3.5 text-[#7C6CF0] dark:text-[#A78BFA]" />
-            <span>Создать</span>
+            <Plus className="w-4 h-4" />
           </button>
         </div>
       </header>
@@ -363,7 +361,7 @@ export default function App() {
       <PushNotificationBanner />
 
       {/* Main Content Area based on Active Tab */}
-      <main className="flex-1 flex flex-col justify-center">
+      <main className="flex-1 min-h-0 flex flex-col overflow-y-auto">
         {loading ? (
           <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-3">
             <div className="w-10 h-10 rounded-full border-2 border-[#7C6CF0]/20 border-t-[#7C6CF0] animate-spin" />
@@ -424,22 +422,22 @@ export default function App() {
         onSave={handleSaveAffirmation}
       />
 
-      {/* Bottom Sticky Mobile Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 glass-nav nav-bottom-safe">
-        <div className="max-w-md mx-auto px-4 py-2 flex items-center justify-around">
+      {/* Bottom Floating Mobile Navigation */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 px-4 nav-bottom-safe pointer-events-none">
+        <div className="max-w-md mx-auto pointer-events-auto rounded-[28px] bg-white/75 dark:bg-zinc-950/80 backdrop-blur-2xl shadow-xl shadow-black/[0.06] dark:shadow-black/40 border border-white/60 dark:border-white/5 px-2 py-2 flex items-center justify-around mb-3">
           {/* Zen View Tab */}
           <button
             onClick={() => {
               audioManager.triggerHaptic([10]);
               setActiveTab('zen');
             }}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all ${
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-2xl transition-all ${
               activeTab === 'zen'
-                ? 'text-[#7C6CF0] dark:text-[#A78BFA] font-semibold bg-[#EFEAFE]/80 dark:bg-white/5'
-                : 'text-slate-500 dark:text-zinc-500 hover:text-slate-800 dark:hover:text-zinc-300'
+                ? 'text-[#6A5BF5] dark:text-[#A78BFA] font-semibold bg-[#EFEAFE] dark:bg-white/10'
+                : 'text-slate-400 dark:text-zinc-500'
             }`}
           >
-            <Sparkles className={`w-5 h-5 ${activeTab === 'zen' ? 'scale-110 drop-shadow-[0_0_8px_rgba(124,108,240,0.45)]' : ''}`} />
+            <Sparkles className="w-5 h-5" />
             <span className="text-[10px]">Дзен</span>
           </button>
 
@@ -449,13 +447,13 @@ export default function App() {
               audioManager.triggerHaptic([10]);
               setActiveTab('library');
             }}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all ${
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-2xl transition-all ${
               activeTab === 'library'
-                ? 'text-[#7C6CF0] dark:text-[#A78BFA] font-semibold bg-[#EFEAFE]/80 dark:bg-white/5'
-                : 'text-slate-500 dark:text-zinc-500 hover:text-slate-800 dark:hover:text-zinc-300'
+                ? 'text-[#6A5BF5] dark:text-[#A78BFA] font-semibold bg-[#EFEAFE] dark:bg-white/10'
+                : 'text-slate-400 dark:text-zinc-500'
             }`}
           >
-            <Library className={`w-5 h-5 ${activeTab === 'library' ? 'scale-110 drop-shadow-[0_0_8px_rgba(124,108,240,0.45)]' : ''}`} />
+            <Library className="w-5 h-5" />
             <span className="text-[10px]">Библиотека</span>
           </button>
 
@@ -465,14 +463,14 @@ export default function App() {
               audioManager.triggerHaptic([10]);
               setActiveTab('schedule');
             }}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all ${
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-2xl transition-all ${
               activeTab === 'schedule'
-                ? 'text-[#7C6CF0] dark:text-[#A78BFA] font-semibold bg-[#EFEAFE]/80 dark:bg-white/5'
-                : 'text-slate-500 dark:text-zinc-500 hover:text-slate-800 dark:hover:text-zinc-300'
+                ? 'text-[#6A5BF5] dark:text-[#A78BFA] font-semibold bg-[#EFEAFE] dark:bg-white/10'
+                : 'text-slate-400 dark:text-zinc-500'
             }`}
           >
             <div className="relative">
-              <Bell className={`w-5 h-5 ${activeTab === 'schedule' ? 'scale-110 drop-shadow-[0_0_8px_rgba(124,108,240,0.45)]' : ''}`} />
+              <Bell className="w-5 h-5" />
               {affirmations.some(a => a.schedule?.enabled) && (
                 <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-500 ring-2 ring-white dark:ring-zinc-950" />
               )}
@@ -486,13 +484,13 @@ export default function App() {
               audioManager.triggerHaptic([10]);
               setActiveTab('meditation');
             }}
-            className={`flex flex-col items-center gap-1 py-1 px-3 rounded-2xl transition-all ${
+            className={`flex flex-col items-center gap-0.5 py-1.5 px-4 rounded-2xl transition-all ${
               activeTab === 'meditation'
-                ? 'text-[#7C6CF0] dark:text-[#A78BFA] font-semibold bg-[#EFEAFE]/80 dark:bg-white/5'
-                : 'text-slate-500 dark:text-zinc-500 hover:text-slate-800 dark:hover:text-zinc-300'
+                ? 'text-[#6A5BF5] dark:text-[#A78BFA] font-semibold bg-[#EFEAFE] dark:bg-white/10'
+                : 'text-slate-400 dark:text-zinc-500'
             }`}
           >
-            <Wind className={`w-5 h-5 ${activeTab === 'meditation' ? 'scale-110 drop-shadow-[0_0_8px_rgba(124,108,240,0.45)]' : ''}`} />
+            <Wind className="w-5 h-5" />
             <span className="text-[10px]">Дыхание</span>
           </button>
         </div>

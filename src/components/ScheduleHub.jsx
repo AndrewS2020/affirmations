@@ -116,21 +116,21 @@ export default function ScheduleHub({
       <div>
         <h2 className="text-xl font-bold text-slate-900 dark:text-zinc-100 flex items-center gap-2">
           <Bell className="w-5 h-5 text-[#7C6CF0] dark:text-[#A78BFA]" />
-          <span>Центр уведомлений и График</span>
+          <span>Уведомления и график</span>
         </h2>
         <p className="text-xs text-slate-500 dark:text-zinc-400 mt-0.5">
-          Настройте время и дни получения вдохновляющих пушей на телефон
+          Настройте время и дни получения пушей на телефон
         </p>
       </div>
 
       {/* Push System Status Card */}
-      <div className="p-5 rounded-3xl bg-gradient-to-br from-white/95 via-white/80 to-[#EFEAFE]/70 dark:from-zinc-900/90 dark:via-zinc-900/60 dark:to-purple-950/40 border border-[#DDD6F9] dark:border-zinc-800 shadow-xl shadow-[#7C6CF0]/5 space-y-4">
+      <div className="p-5 rounded-[28px] bg-white/80 dark:bg-zinc-900/80 shadow-sm space-y-4">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-2xl border ${
+            <div className={`p-3 rounded-2xl ${
               hasPushSub
-                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
-                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
             }`}>
               <Smartphone className="w-6 h-6" />
             </div>
@@ -160,10 +160,10 @@ export default function ScheduleHub({
           <button
             onClick={handleToggleSubscription}
             disabled={isSubscribing}
-            className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl text-xs font-semibold transition-all active:scale-98 shadow-md ${
+            className={`flex items-center justify-center gap-2 py-3 px-4 rounded-2xl text-xs font-semibold transition-all active:scale-95 ${
               hasPushSub
-                ? 'bg-slate-200 dark:bg-zinc-800 hover:bg-slate-300 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 border border-slate-300 dark:border-zinc-700'
-                : 'bg-gradient-to-r from-[#8B7CF6] to-[#6A5BF5] text-white shadow-[0_10px_24px_rgba(124,108,240,0.38)] hover:opacity-95'
+                ? 'bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300'
+                : 'bg-gradient-to-r from-[#8B7CF6] to-[#6A5BF5] text-white shadow-md shadow-[#7C6CF0]/25'
             }`}
           >
             <Bell className="w-4 h-4" />
@@ -173,7 +173,7 @@ export default function ScheduleHub({
           <button
             onClick={handleQuickTest}
             disabled={isSendingTest}
-            className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-white/85 dark:bg-zinc-800/80 hover:bg-[#EFEAFE] dark:hover:bg-zinc-700/80 border border-[#DDD6F9] dark:border-zinc-700 text-xs font-medium text-slate-700 dark:text-zinc-200 transition-all active:scale-98 shadow-sm"
+            className="flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-white/80 dark:bg-zinc-800/80 text-xs font-medium text-slate-700 dark:text-zinc-200 transition-all active:scale-95 shadow-sm"
           >
             <Send className={`w-3.5 h-3.5 text-[#7C6CF0] dark:text-[#A78BFA] ${isSendingTest ? 'animate-bounce' : ''}`} />
             <span>{isSendingTest ? 'Отправка...' : 'Тестовый пуш'}</span>
@@ -195,7 +195,7 @@ export default function ScheduleHub({
         {/* iOS Notice & Help */}
         <button
           onClick={() => setShowIosGuide(!showIosGuide)}
-          className="w-full flex items-center justify-between pt-2 border-t border-slate-200/80 dark:border-zinc-800/60 text-[11px] text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200 transition-colors text-left"
+          className="w-full flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-zinc-800/60 text-[11px] text-slate-500 dark:text-zinc-400 transition-colors text-left py-1"
         >
           <span className="flex items-center gap-1">
             <HelpCircle className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
@@ -205,7 +205,7 @@ export default function ScheduleHub({
         </button>
 
         {showIosGuide && (
-          <div className="p-3.5 rounded-2xl bg-white/85 dark:bg-zinc-950/60 border border-[#DDD6F9] dark:border-zinc-800 text-xs text-slate-700 dark:text-zinc-300 space-y-2 animate-in fade-in">
+          <div className="p-3.5 rounded-2xl bg-white/80 dark:bg-zinc-950/60 text-xs text-slate-700 dark:text-zinc-300 space-y-2 animate-in fade-in">
             <p className="font-semibold text-slate-800 dark:text-zinc-200">📱 Как получать уведомления на iPhone / iPad:</p>
             <ol className="list-decimal pl-4 space-y-1 text-slate-600 dark:text-zinc-400 text-[11px]">
               <li>В Safari нажмите кнопку <strong>«Поделиться»</strong> <Share className="w-3 h-3 inline" /> внизу экрана.</li>
@@ -232,7 +232,7 @@ export default function ScheduleHub({
         </div>
 
         {timelineSlots.length === 0 ? (
-          <div className="p-6 rounded-2xl bg-white/70 dark:bg-zinc-900/40 border border-[#DDD6F9] dark:border-zinc-800/60 text-center space-y-2">
+          <div className="p-6 rounded-2xl bg-white/70 dark:bg-zinc-900/40 text-center space-y-2">
             <BellOff className="w-8 h-8 text-slate-400 dark:text-zinc-600 mx-auto" />
             <p className="text-slate-600 dark:text-zinc-400 text-sm font-medium">Нет активных графиков</p>
             <p className="text-slate-400 dark:text-zinc-600 text-xs max-w-xs mx-auto">
@@ -244,17 +244,17 @@ export default function ScheduleHub({
             {timelineSlots.map((slot, idx) => (
               <div
                 key={`${slot.affirmation.id}-${slot.time}-${idx}`}
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-white/85 dark:bg-zinc-900/70 border border-[#DDD6F9] dark:border-zinc-800/80 hover:border-[#C9BDF8] dark:hover:border-zinc-700/80 transition-all shadow-sm"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-white/80 dark:bg-zinc-900/70 transition-all shadow-sm"
               >
-                <div className="flex items-center gap-3">
-                  <div className="px-3 py-1.5 rounded-xl bg-[#EFEAFE] dark:bg-zinc-800 border border-[#C9BDF8] dark:border-zinc-700 text-xs font-bold text-[#6A5BF5] dark:text-[#C4B5FD]">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="px-3 py-1.5 rounded-xl bg-[#EFEAFE] dark:bg-zinc-800 text-xs font-bold text-[#6A5BF5] dark:text-[#C4B5FD] flex-shrink-0">
                     {slot.time}
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 uppercase font-semibold">
                       {slot.affirmation.category || 'Гармония'}
                     </span>
-                    <p className="text-xs text-slate-800 dark:text-zinc-200 mt-1 line-clamp-1 max-w-[200px] sm:max-w-[320px]">
+                    <p className="text-xs text-slate-800 dark:text-zinc-200 mt-1 line-clamp-1">
                       «{slot.affirmation.text}»
                     </p>
                   </div>
@@ -262,7 +262,7 @@ export default function ScheduleHub({
 
                 <button
                   onClick={() => onOpenScheduleModal(slot.affirmation)}
-                  className="p-2 rounded-xl text-slate-400 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                  className="p-2.5 rounded-full text-slate-400 dark:text-zinc-400 active:bg-slate-100 dark:active:bg-zinc-800 transition-colors flex-shrink-0"
                   title="Изменить график"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -287,7 +287,7 @@ export default function ScheduleHub({
             return (
               <div
                 key={aff.id}
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-white/85 dark:bg-zinc-900/60 border border-[#DDD6F9] dark:border-zinc-800/70 hover:border-[#C9BDF8] dark:hover:border-zinc-700/70 transition-all shadow-sm"
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-white/80 dark:bg-zinc-900/60 transition-all shadow-sm"
               >
                 <div className="flex items-start gap-3 flex-1 min-w-0 pr-3">
                   {/* Quick Toggle */}
@@ -298,7 +298,7 @@ export default function ScheduleHub({
                       onChange={() => handleToggleSchedule(aff)}
                       className="sr-only peer"
                     />
-                    <div className="w-8 h-4 bg-slate-300 dark:bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:after:bg-zinc-400 after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#7C6CF0] peer-checked:after:bg-white"></div>
+                    <div className="w-9 h-5 bg-slate-300 dark:bg-zinc-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:after:bg-zinc-400 after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#7C6CF0] peer-checked:after:bg-white"></div>
                   </label>
 
                   <div className="min-w-0">
@@ -321,10 +321,9 @@ export default function ScheduleHub({
                 {/* Edit Schedule Button */}
                 <button
                   onClick={() => onOpenScheduleModal(aff)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 text-xs font-medium border border-slate-200 dark:border-zinc-700/60 transition-colors flex-shrink-0"
+                  className="flex items-center justify-center p-2.5 rounded-full bg-slate-100 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 transition-colors flex-shrink-0"
                 >
-                  <span>Настроить</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             );

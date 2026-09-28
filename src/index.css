@@ -97,7 +97,7 @@ html.dark .glass-nav {
 }
 
 .nav-bottom-safe {
-  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Particle animation */

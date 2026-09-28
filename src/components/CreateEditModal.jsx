@@ -105,15 +105,15 @@ export default function CreateEditModal({
   const activeTheme = getTheme(themeId);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div 
-        className="w-full max-w-lg bg-white/95 dark:bg-zinc-900 backdrop-blur-xl border border-[#DDD6F9] dark:border-zinc-800 rounded-3xl overflow-hidden shadow-2xl shadow-[#7C6CF0]/10 flex flex-col max-h-[90vh] text-slate-900 dark:text-zinc-100"
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 dark:bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+      <div
+        className="w-full max-w-lg bg-white/95 dark:bg-zinc-900 backdrop-blur-xl rounded-t-[32px] sm:rounded-[32px] overflow-hidden shadow-2xl shadow-black/10 flex flex-col max-h-[92vh] text-slate-900 dark:text-zinc-100 animate-in slide-in-from-bottom sm:zoom-in-95 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-5 border-b border-[#DDD6F9]/80 dark:border-zinc-800 flex items-center justify-between bg-[#F7F5FE]/90 dark:bg-zinc-950/40">
+        <div className="p-5 flex items-center justify-between bg-[#F7F5FE]/90 dark:bg-zinc-950/40">
           <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-2xl bg-[#EFEAFE] dark:bg-purple-500/10 text-[#6A5BF5] dark:text-[#A78BFA] border border-[#C9BDF8] dark:border-purple-500/20">
+            <div className="p-2.5 rounded-2xl bg-[#EFEAFE] dark:bg-purple-500/10 text-[#6A5BF5] dark:text-[#A78BFA]">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
@@ -162,7 +162,7 @@ export default function CreateEditModal({
                     type="button"
                     key={idx}
                     onClick={() => handleUseTemplate(tmpl)}
-                    className="text-left text-xs p-2.5 rounded-xl bg-white/85 dark:bg-zinc-800/60 hover:bg-[#EFEAFE] dark:hover:bg-zinc-800 border border-[#DDD6F9] dark:border-zinc-700/60 text-slate-700 dark:text-zinc-300 min-w-[200px] max-w-[240px] flex-shrink-0 transition-colors line-clamp-2"
+                    className="text-left text-xs p-2.5 rounded-xl bg-white/85 dark:bg-zinc-800/60 hover:bg-[#EFEAFE] dark:hover:bg-zinc-800 text-slate-700 dark:text-zinc-300 min-w-[200px] max-w-[240px] flex-shrink-0 transition-colors line-clamp-2"
                   >
                     «{tmpl}»
                   </button>
@@ -208,7 +208,7 @@ export default function CreateEditModal({
                   className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                     category === cat
                       ? 'bg-[#7C6CF0] text-white shadow-md shadow-[#7C6CF0]/25 border border-[#8B7CF6]/60'
-                      : 'bg-white/85 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-400 border border-[#DDD6F9] dark:border-zinc-700/60 hover:text-slate-900 dark:hover:text-zinc-200'
+                      : 'bg-white/85 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200'
                   }`}
                 >
                   {cat}
@@ -273,7 +273,7 @@ export default function CreateEditModal({
           </div>
 
           {/* Notification Schedule Switch inside creation modal */}
-          <div className="p-4 rounded-2xl bg-white/85 dark:bg-zinc-950/60 border border-[#DDD6F9] dark:border-zinc-800 space-y-4">
+          <div className="p-4 rounded-2xl bg-white/85 dark:bg-zinc-950/60 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Bell className="w-4 h-4 text-[#7C6CF0] dark:text-[#A78BFA]" />
@@ -315,7 +315,7 @@ export default function CreateEditModal({
                     type="time"
                     value={newTime}
                     onChange={(e) => setNewTime(e.target.value)}
-                    className="px-2.5 py-1.5 bg-white dark:bg-zinc-900 border border-[#DDD6F9] dark:border-zinc-700 rounded-xl text-xs text-slate-900 dark:text-zinc-200 focus:outline-none focus:border-[#7C6CF0]"
+                    className="px-2.5 py-1.5 bg-white dark:bg-zinc-900 rounded-xl text-xs text-slate-900 dark:text-zinc-200 focus:outline-none focus:border-[#7C6CF0]"
                   />
                   <button
                     type="button"
