@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Outfit', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Airy Mist light mode: layered pastel gradient + fixed radial blooms */
+body {
+  background-color: #f3f0fc;
+  background-image:
+    radial-gradient(560px 420px at 85% -6%, rgba(139, 124, 246, 0.16), transparent 62%),
+    radial-gradient(480px 380px at -8% 32%, rgba(79, 216, 192, 0.16), transparent 60%),
+    radial-gradient(520px 420px at 68% 108%, rgba(249, 168, 212, 0.08), transparent 62%),
+    linear-gradient(165deg, #fdfcff 0%, #f3f0fc 52%, #ecf5f2 100%);
+  background-attachment: fixed;
+  color: #23203a;
+}
+
+/* Dark mode override */
+html.dark body {
+  background-color: #09090b;
+  background-image: none;
+  color: #f4f4f5;
+}
+
+/* Allow text selection inside modals and inputs */
+input, textarea, [contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* Glassmorphism helpers */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(139, 124, 246, 0.16);
+}
+html.dark .glass-panel {
+  background: rgba(18, 18, 24, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(139, 124, 246, 0.16);
+}
+html.dark .glass-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-nav {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(139, 124, 246, 0.14);
+}
+html.dark .glass-nav {
+  background: rgba(12, 12, 18, 0.88);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Hide scrollbar for tabs */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area insets for mobile */
+.safe-top {
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+
+.safe-bottom {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.nav-bottom-safe {
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+/* Particle animation */
+@keyframes floatParticle {
+  0% { transform: translateY(0) scale(1); opacity: 0.2; }
+  50% { transform: translateY(-30px) scale(1.2); opacity: 0.7; }
+  100% { transform: translateY(-60px) scale(0.8); opacity: 0; }
+}
+
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: floatParticle 4s infinite ease-in-out;
+}

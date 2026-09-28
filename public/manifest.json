@@ -1,0 +1,44 @@
+{
+  "name": "Аффирмации — Гармония & Уверенность",
+  "short_name": "Аффирмации",
+  "description": "Красивые ежедневные аффирмации с гибкой настройкой push-уведомлений и практиками осознанности",
+  "start_url": "/affirmations/",
+  "scope": "/affirmations/",
+  "id": "/affirmations/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#09090b",
+  "theme_color": "#1e1b4b",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "/affirmations/icons/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Дзен дня",
+      "short_name": "Дзен",
+      "description": "Открыть вдохновляющую аффирмацию дня",
+      "url": "/affirmations/?tab=zen",
+      "icons": [{ "src": "/affirmations/icons/icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Мои аффирмации",
+      "short_name": "Список",
+      "description": "Управление библиотекой аффирмаций",
+      "url": "/affirmations/?tab=library",
+      "icons": [{ "src": "/affirmations/icons/icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Настроить график",
+      "short_name": "Уведомления",
+      "description": "График пуш-уведомлений",
+      "url": "/affirmations/?tab=schedule",
+      "icons": [{ "src": "/affirmations/icons/icon.svg", "sizes": "192x192" }]
+    }
+  ]
+}
