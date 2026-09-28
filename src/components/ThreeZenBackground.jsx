@@ -88,9 +88,9 @@ export default function ThreeZenBackground({
 
     // =========================================================================
     // "БЕСФОРМЕННЫЙ КОМОК ЧАСТИЦ" (Amorphous Living Spirit Chaos Clump)
-    // 3,800 particles forming a shapeless, constantly morphing cosmic blob
+    // 4,800 micro-particles forming a fine, shimmering cosmic stardust cloud
     // =========================================================================
-    const particleCount = 3800;
+    const particleCount = 4800;
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
 
@@ -144,11 +144,11 @@ export default function ThreeZenBackground({
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: isDarkMode ? 0.62 : 0.48,
+      size: isDarkMode ? 0.31 : 0.24,
       vertexColors: true,
       map: particleTexture,
       transparent: true,
-      opacity: isDarkMode ? 0.95 : 0.82,
+      opacity: isDarkMode ? 0.95 : 0.85,
       blending: isDarkMode ? THREE.AdditiveBlending : THREE.NormalBlending,
       depthWrite: false
     });
