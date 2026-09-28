@@ -10,7 +10,9 @@ import {
   Bell, 
   Palette, 
   Check,
-  Layers
+  Layers,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getTheme, getFontClass, THEMES } from '../utils/themes';
@@ -32,6 +34,7 @@ export default function ZenView({
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [is3DEnabled, setIs3DEnabled] = useState(true);
+  const [isCardVisible, setIsCardVisible] = useState(true);
   const [pulseCount, setPulseCount] = useState(0);
   const [swipeCount, setSwipeCount] = useState(0);
 
@@ -219,6 +222,22 @@ export default function ZenView({
             <span>3D</span>
           </button>
 
+          {/* Eye Toggle to Hide/Show Card for Full 3D Immersion */}
+          <button
+            onClick={() => {
+              audioManager.triggerHaptic([10]);
+              setIsCardVisible(!isCardVisible);
+            }}
+            className={`p-2.5 rounded-full backdrop-blur-xl border transition-all duration-200 active:scale-90 ${
+              !isCardVisible
+                ? 'bg-amber-500/20 text-amber-600 dark:text-amber-300 border-amber-400/40 shadow-sm ring-2 ring-amber-400/20'
+                : 'bg-white/70 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 border-white/60 dark:border-white/5 shadow-sm'
+            }`}
+            title={isCardVisible ? "Скрыть карточку (Режим чистого 3D космоса)" : "Показать карточку"}
+          >
+            {isCardVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+          </button>
+
           {/* Theme customizer button */}
           <button
             onClick={() => setShowThemePicker(!showThemePicker)}
@@ -264,8 +283,33 @@ export default function ZenView({
         </div>
       )}
 
+      {/* Immersion Mode Notice / Return Button when card is hidden */}
+      {!isCardVisible && (
+        <div className="relative z-20 py-28 flex flex-col items-center justify-center animate-in fade-in duration-500">
+          <button
+            onClick={() => {
+              audioManager.triggerHaptic([15]);
+              setIsCardVisible(true);
+            }}
+            className="flex items-center gap-2 px-5 py-3 rounded-full bg-white/80 dark:bg-zinc-900/70 backdrop-blur-2xl border border-white/80 dark:border-white/15 shadow-xl text-slate-700 dark:text-zinc-100 hover:scale-105 active:scale-95 transition-all text-xs font-medium group"
+          >
+            <Eye className="w-4 h-4 text-[#7C6CF0] group-hover:scale-110 transition-transform" />
+            <span>Вернуть карточку аффирмации</span>
+          </button>
+          <p className="mt-3 text-[11px] text-slate-400 dark:text-zinc-400 bg-white/40 dark:bg-black/20 px-3 py-1 rounded-full backdrop-blur-md">
+            Режим созерцания: наслаждайтесь 3D сакральной геометрией
+          </p>
+        </div>
+      )}
+
       {/* Main Affirmation Card (Frosted Glass revealing 3D scene beneath) */}
-      <div className="relative w-full py-3 flex items-center justify-center z-10">
+      <div 
+        className={`relative w-full py-3 flex items-center justify-center z-10 transition-all duration-500 ease-out ${
+          isCardVisible 
+            ? 'opacity-100 scale-100 pointer-events-auto block' 
+            : 'opacity-0 scale-90 pointer-events-none hidden'
+        }`}
+      >
         <div
           ref={cardRef}
           onTouchStart={handleTouchStart}
