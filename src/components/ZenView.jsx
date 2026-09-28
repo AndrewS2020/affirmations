@@ -34,6 +34,7 @@ export default function ZenView({
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [is3DEnabled, setIs3DEnabled] = useState(true);
+  const [visualMode, setVisualMode] = useState(() => localStorage.getItem('zen_visual_mode') || 'clump');
   const [isCardVisible, setIsCardVisible] = useState(true);
   const [pulseCount, setPulseCount] = useState(0);
   const [swipeCount, setSwipeCount] = useState(0);
@@ -186,6 +187,7 @@ export default function ZenView({
           pulseTrigger={pulseCount} 
           swipeTrigger={swipeCount} 
           affirmationId={currentAffirmation?.id}
+          visualMode={visualMode}
         />
       )}
 
@@ -205,7 +207,7 @@ export default function ZenView({
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {/* 3D WebGL Toggle */}
           <button
             onClick={() => {
@@ -222,6 +224,22 @@ export default function ZenView({
             <Sparkles className="w-3.5 h-3.5" />
             <span>3D</span>
           </button>
+
+          {/* 3D Visual Style Quick Switcher (Clump vs Jellyfish) */}
+          {is3DEnabled && (
+            <button
+              onClick={() => {
+                audioManager.triggerHaptic([10]);
+                const nextMode = visualMode === 'clump' ? 'jellyfish' : 'clump';
+                setVisualMode(nextMode);
+                localStorage.setItem('zen_visual_mode', nextMode);
+              }}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-full backdrop-blur-xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-zinc-900/50 text-xs font-medium text-slate-700 dark:text-zinc-200 active:scale-90 transition-all shadow-sm"
+              title={visualMode === 'clump' ? "Стиль: Космический комок (нажмите для Медузы)" : "Стиль: Медуза (нажмите для Сгустка)"}
+            >
+              <span className="text-xs">{visualMode === 'clump' ? '🌌 Сгусток' : '🪼 Медуза'}</span>
+            </button>
+          )}
 
           {/* Eye Toggle to Hide/Show Card for Full 3D Immersion */}
           <button
@@ -280,6 +298,44 @@ export default function ZenView({
                 }`}>{t.name.split(' ')[0]}</span>
               </button>
             ))}
+          </div>
+
+          {/* 3D Visual Style Chooser in Customizer */}
+          <div className="mt-3.5 pt-3 border-t border-slate-200/60 dark:border-white/10">
+            <div className="text-xs font-medium text-slate-500 dark:text-zinc-400 mb-2 px-1">
+              3D Стиль визуализации
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setVisualMode('clump');
+                  localStorage.setItem('zen_visual_mode', 'clump');
+                  audioManager.triggerHaptic([10]);
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-2xl border text-xs font-medium transition-all ${
+                  visualMode === 'clump'
+                    ? 'bg-[#7C6CF0]/15 text-[#6A5BF5] dark:text-[#A78BFA] border-[#7C6CF0]/40 font-semibold'
+                    : 'bg-white/50 dark:bg-white/5 text-slate-500 dark:text-zinc-400 border-white/40 dark:border-white/5'
+                }`}
+              >
+                <span>🌌 Сгусток плазмы</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setVisualMode('jellyfish');
+                  localStorage.setItem('zen_visual_mode', 'jellyfish');
+                  audioManager.triggerHaptic([10]);
+                }}
+                className={`flex items-center justify-center gap-1.5 py-2 px-3 rounded-2xl border text-xs font-medium transition-all ${
+                  visualMode === 'jellyfish'
+                    ? 'bg-[#7C6CF0]/15 text-[#6A5BF5] dark:text-[#A78BFA] border-[#7C6CF0]/40 font-semibold'
+                    : 'bg-white/50 dark:bg-white/5 text-slate-500 dark:text-zinc-400 border-white/40 dark:border-white/5'
+                }`}
+              >
+                <span>🪼 Био-медуза</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
