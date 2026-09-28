@@ -185,11 +185,13 @@ export default function ZenView({
         />
       )}
 
-      {/* Background Soft Orbs Fallback */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-20">
-        <div className={`absolute top-1/4 -left-16 w-72 h-72 rounded-full ${theme.orbColors[0]} blur-3xl opacity-30 animate-float transition-colors duration-700`} />
-        <div className={`absolute bottom-1/4 -right-16 w-80 h-80 rounded-full ${theme.orbColors[1]} blur-3xl opacity-25 animate-pulse-slow transition-colors duration-700`} />
-      </div>
+      {/* Background Soft Orbs Fallback (Only active when 3D is disabled) */}
+      {!is3DEnabled && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none -z-20">
+          <div className={`absolute top-1/4 -left-16 w-72 h-72 rounded-full ${theme.orbColors[0]} blur-3xl opacity-30 animate-float transition-colors duration-700`} />
+          <div className={`absolute bottom-1/4 -right-16 w-80 h-80 rounded-full ${theme.orbColors[1]} blur-3xl opacity-25 animate-pulse-slow transition-colors duration-700`} />
+        </div>
+      )}
 
       {/* Slim Floating Toolbar */}
       <div className="w-full flex items-center justify-between py-2.5 z-10">
@@ -262,8 +264,8 @@ export default function ZenView({
         </div>
       )}
 
-      {/* Main Affirmation Card */}
-      <div className="relative w-full py-3 flex items-center justify-center">
+      {/* Main Affirmation Card (Frosted Glass revealing 3D scene beneath) */}
+      <div className="relative w-full py-3 flex items-center justify-center z-10">
         <div
           ref={cardRef}
           onTouchStart={handleTouchStart}
@@ -274,7 +276,7 @@ export default function ZenView({
             opacity: 1 - Math.min(Math.abs(dragX) / 400, 0.4),
             transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease'
           }}
-          className={`relative w-full rounded-[32px] p-6 sm:p-8 flex flex-col justify-between min-h-[360px] max-h-[480px] border backdrop-blur-xl ${theme.cardGradient} ${theme.border} ${theme.glow}`}
+          className={`relative w-full rounded-[32px] p-6 sm:p-8 flex flex-col justify-between min-h-[360px] max-h-[480px] border backdrop-blur-2xl shadow-2xl ${theme.cardGradient} ${theme.border} ${theme.glow}`}
         >
           {/* Card Header */}
           <div className="flex items-center justify-between">
@@ -312,7 +314,7 @@ export default function ZenView({
           {/* Affirmation Text */}
           <div className="my-auto py-8 text-center select-none">
             <div className={`text-3xl sm:text-4xl ${theme.quoteColor} font-serif mb-1 select-none`}>“</div>
-            <p className={`text-2xl sm:text-3xl leading-relaxed sm:leading-relaxed select-text font-medium ${theme.textColor} ${fontClass}`}>
+            <p className={`text-2xl sm:text-3xl leading-relaxed sm:leading-relaxed select-text font-medium drop-shadow-sm ${theme.textColor} ${fontClass}`}>
               {currentAffirmation.text}
             </p>
             <div className={`text-3xl sm:text-4xl ${theme.quoteColor} font-serif mt-1 select-none`}>”</div>
@@ -322,7 +324,7 @@ export default function ZenView({
           <div className="flex items-center justify-center gap-2 pt-2">
             <button
               onClick={handlePlayChime}
-              className="flex items-center justify-center w-11 h-11 rounded-full bg-white/70 dark:bg-black/25 active:scale-90 text-slate-700 dark:text-white transition-all shadow-sm"
+              className="flex items-center justify-center w-11 h-11 rounded-full bg-white/70 dark:bg-black/30 backdrop-blur-md active:scale-90 text-slate-700 dark:text-white transition-all shadow-sm border border-white/50 dark:border-white/10"
               title="Звук поющей чаши (432 Гц)"
             >
               <Sparkles className="w-[18px] h-[18px] text-[#8B7CF6] dark:text-[#C4B5FD]" />
@@ -330,10 +332,10 @@ export default function ZenView({
 
             <button
               onClick={handleSpeechToggle}
-              className={`flex items-center justify-center w-11 h-11 rounded-full active:scale-90 transition-all shadow-sm ${
+              className={`flex items-center justify-center w-11 h-11 rounded-full active:scale-90 transition-all shadow-sm border border-white/50 dark:border-white/10 ${
                 isSpeaking
                   ? 'bg-[#7C6CF0] text-white shadow-md shadow-[#7C6CF0]/30'
-                  : 'bg-white/70 dark:bg-black/25 text-slate-700 dark:text-white'
+                  : 'bg-white/70 dark:bg-black/30 backdrop-blur-md text-slate-700 dark:text-white'
               }`}
               title="Прочитать аффирмацию вслух"
             >
@@ -342,7 +344,7 @@ export default function ZenView({
 
             <button
               onClick={handleShare}
-              className="flex items-center justify-center w-11 h-11 rounded-full bg-white/70 dark:bg-black/25 active:scale-90 text-slate-700 dark:text-white transition-all shadow-sm"
+              className="flex items-center justify-center w-11 h-11 rounded-full bg-white/70 dark:bg-black/30 backdrop-blur-md active:scale-90 text-slate-700 dark:text-white transition-all shadow-sm border border-white/50 dark:border-white/10"
               title="Поделиться"
             >
               {copied ? <Check className="w-[18px] h-[18px] text-emerald-600 dark:text-emerald-400" /> : <Share2 className="w-[18px] h-[18px] text-[#7C6CF0] dark:text-[#A78BFA]" />}
