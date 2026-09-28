@@ -7,12 +7,14 @@ import {
   Sparkles, 
   ChevronLeft, 
   ChevronRight, 
+  ChevronDown,
+  ChevronUp,
   Bell, 
   Palette, 
   Check,
   Layers,
-  Eye,
-  EyeOff
+  Minimize2,
+  Maximize2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getTheme, getFontClass, THEMES } from '../utils/themes';
@@ -35,7 +37,7 @@ export default function ZenView({
   const [isDragging, setIsDragging] = useState(false);
   const [is3DEnabled, setIs3DEnabled] = useState(true);
   const [visualMode, setVisualMode] = useState(() => localStorage.getItem('zen_visual_mode') || 'clump');
-  const [isCardVisible, setIsCardVisible] = useState(true);
+  const [isCardCollapsed, setIsCardCollapsed] = useState(() => localStorage.getItem('zen_card_collapsed') === 'true');
   const [pulseCount, setPulseCount] = useState(0);
   const [swipeCount, setSwipeCount] = useState(0);
 
@@ -45,6 +47,10 @@ export default function ZenView({
   const cardRef = useRef(null);
 
   const currentAffirmation = affirmations[currentIndex] || affirmations[0];
+
+  useEffect(() => {
+    localStorage.setItem('zen_card_collapsed', String(isCardCollapsed));
+  }, [isCardCollapsed]);
 
   useEffect(() => {
     if (isSpeaking) {
@@ -71,6 +77,19 @@ export default function ZenView({
     setSwipeCount(c => c + 1);
     onIndexChange((currentIndex - 1 + affirmations.length) % affirmations.length);
   };
+
+  // Keyboard navigation (ArrowLeft / ArrowRight)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowRight') {
+        handleNext();
+      } else if (e.key === 'ArrowLeft') {
+        handlePrev();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentIndex, affirmations.length]);
 
   const handleTouchStart = (e) => {
     touchStartX.current = e.touches[0].clientX;
@@ -201,10 +220,26 @@ export default function ZenView({
 
       {/* Slim Floating Toolbar */}
       <div className="w-full flex items-center justify-between py-2.5 z-10">
-        <div className="flex items-center gap-1.5 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/60 dark:border-white/5 shadow-sm text-xs text-slate-600 dark:text-zinc-300">
-          <span className="font-semibold tabular-nums">
+        <div className="flex items-center gap-0.5 bg-white/70 dark:bg-zinc-900/50 backdrop-blur-xl px-2 py-1 rounded-full border border-white/60 dark:border-white/5 shadow-sm text-xs text-slate-600 dark:text-zinc-300">
+          <button 
+            onClick={handlePrev}
+            disabled={affirmations.length <= 1}
+            className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-25 active:scale-90"
+            title="Предыдущая аффирмация"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </button>
+          <span className="font-semibold tabular-nums px-1.5">
             {currentIndex + 1} <span className="text-slate-400 dark:text-zinc-500 font-normal">/ {affirmations.length}</span>
           </span>
+          <button 
+            onClick={handleNext}
+            disabled={affirmations.length <= 1}
+            className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors disabled:opacity-25 active:scale-90"
+            title="Следующая аффирмация"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -247,20 +282,20 @@ export default function ZenView({
             </button>
           )}
 
-          {/* Eye Toggle to Hide/Show Card for Full 3D Immersion */}
+          {/* Card Collapse / Expand Toggle */}
           <button
             onClick={() => {
               audioManager.triggerHaptic([10]);
-              setIsCardVisible(!isCardVisible);
+              setIsCardCollapsed(!isCardCollapsed);
             }}
             className={`p-2.5 rounded-full backdrop-blur-xl border transition-all duration-200 active:scale-90 ${
-              !isCardVisible
+              isCardCollapsed
                 ? 'bg-amber-500/20 text-amber-600 dark:text-amber-300 border-amber-400/40 shadow-sm ring-2 ring-amber-400/20'
                 : 'bg-white/70 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 border-white/60 dark:border-white/5 shadow-sm'
             }`}
-            title={isCardVisible ? "Скрыть карточку (Режим чистого 3D космоса)" : "Показать карточку"}
+            title={isCardCollapsed ? "Развернуть карточку" : "Свернуть карточку"}
           >
-            {isCardVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            {isCardCollapsed ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
           </button>
 
           {/* Theme customizer button */}
@@ -364,55 +399,45 @@ export default function ZenView({
         </div>
       )}
 
-      {/* Immersion Mode Notice / Return Button when card is hidden */}
-      {!isCardVisible && (
-        <div className="relative z-20 py-28 flex flex-col items-center justify-center animate-in fade-in duration-500">
-          <button
-            onClick={() => {
-              audioManager.triggerHaptic([15]);
-              setIsCardVisible(true);
-            }}
-            className="flex items-center gap-2 px-5 py-3 rounded-full bg-white/80 dark:bg-zinc-900/70 backdrop-blur-2xl border border-white/80 dark:border-white/15 shadow-xl text-slate-700 dark:text-zinc-100 hover:scale-105 active:scale-95 transition-all text-xs font-medium group"
-          >
-            <Eye className="w-4 h-4 text-[#7C6CF0] group-hover:scale-110 transition-transform" />
-            <span>Вернуть карточку аффирмации</span>
-          </button>
-          <p className="mt-3 text-[11px] text-slate-400 dark:text-zinc-400 bg-white/40 dark:bg-black/20 px-3 py-1 rounded-full backdrop-blur-md">
-            Режим созерцания: наслаждайтесь 3D сакральной геометрией
-          </p>
-        </div>
-      )}
-
       {/* Main Affirmation Card (Frosted Glass revealing 3D scene beneath) */}
-      <div 
-        className={`relative w-full py-3 flex items-center justify-center z-10 transition-all duration-500 ease-out ${
-          isCardVisible 
-            ? 'opacity-100 scale-100 pointer-events-auto block' 
-            : 'opacity-0 scale-90 pointer-events-none hidden'
-        }`}
-      >
+      <div className="relative w-full py-2 flex flex-col items-center justify-center z-10">
         <div
           ref={cardRef}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onClick={isCardCollapsed ? () => {
+            audioManager.triggerHaptic([10]);
+            setIsCardCollapsed(false);
+          } : undefined}
           style={{
             transform: `translateX(${dragX}px) rotate(${dragX / 40}deg)`,
             opacity: 1 - Math.min(Math.abs(dragX) / 400, 0.4),
-            transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease'
+            transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease, padding 0.3s ease, min-height 0.35s ease'
           }}
-          className={`relative w-full rounded-[32px] p-6 sm:p-8 flex flex-col justify-between min-h-[360px] max-h-[480px] border backdrop-blur-2xl shadow-2xl ${theme.cardGradient} ${theme.border} ${theme.glow}`}
+          className={`relative w-full rounded-[28px] sm:rounded-[32px] border backdrop-blur-2xl shadow-2xl transition-all duration-300 ${theme.cardGradient} ${theme.border} ${theme.glow} ${
+            isCardCollapsed 
+              ? 'p-3.5 sm:p-4 min-h-0 cursor-pointer hover:border-white/30 group' 
+              : 'p-6 sm:p-8 min-h-[360px] max-h-[480px] flex flex-col justify-between'
+          }`}
         >
-          {/* Card Header */}
-          <div className="flex items-center justify-between">
-            <span className={`text-[11px] px-3 py-1 rounded-full uppercase tracking-wider font-semibold border ${theme.badge}`}>
-              {currentAffirmation.category || 'Гармония'}
-            </span>
-
+          {/* Card Header — ALWAYS visible! */}
+          <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
+              <span className={`text-[11px] px-3 py-1 rounded-full uppercase tracking-wider font-semibold border ${theme.badge}`}>
+                {currentAffirmation.category || 'Гармония'}
+              </span>
+              {isCardCollapsed && (
+                <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 hidden xs:inline opacity-80">
+                  Нажмите, чтобы развернуть
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={() => onOpenScheduleModal(currentAffirmation)}
-                className={`p-2.5 rounded-full transition-all duration-200 active:scale-90 ${
+                className={`p-2 sm:p-2.5 rounded-full transition-all duration-200 active:scale-90 ${
                   currentAffirmation.schedule?.enabled
                     ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
                     : 'bg-black/[0.04] dark:bg-white/10 text-slate-500 dark:text-zinc-400'
@@ -424,7 +449,7 @@ export default function ZenView({
 
               <button
                 onClick={handleHeartClick}
-                className={`p-2.5 rounded-full transition-all duration-200 active:scale-90 ${
+                className={`p-2 sm:p-2.5 rounded-full transition-all duration-200 active:scale-90 ${
                   currentAffirmation.isFavorite
                     ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 scale-105'
                     : 'bg-black/[0.04] dark:bg-white/10 text-slate-500 dark:text-zinc-400'
@@ -433,88 +458,89 @@ export default function ZenView({
               >
                 <Heart className={`w-4 h-4 ${currentAffirmation.isFavorite ? 'fill-current' : ''}`} />
               </button>
+
+              {/* Card Header Collapse / Expand Toggle Chevron */}
+              <button
+                onClick={() => {
+                  audioManager.triggerHaptic([10]);
+                  setIsCardCollapsed(!isCardCollapsed);
+                }}
+                className="p-2 sm:p-2.5 rounded-full bg-black/[0.04] dark:bg-white/10 text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-100 transition-all duration-200 active:scale-90"
+                title={isCardCollapsed ? "Развернуть карточку" : "Свернуть карточку"}
+              >
+                {isCardCollapsed ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronUp className="w-4 h-4" />
+                )}
+              </button>
             </div>
           </div>
 
-          {/* Affirmation Text */}
-          <div className="my-auto py-8 text-center select-none">
-            <div className={`text-3xl sm:text-4xl ${theme.quoteColor} font-serif mb-1 select-none`}>“</div>
-            <p className={`text-2xl sm:text-3xl leading-relaxed sm:leading-relaxed select-text font-medium drop-shadow-sm ${theme.textColor} ${fontClass}`}>
-              {currentAffirmation.text}
-            </p>
-            <div className={`text-3xl sm:text-4xl ${theme.quoteColor} font-serif mt-1 select-none`}>”</div>
-          </div>
+          {/* Expanded Card Body (Affirmation text and bottom actions) */}
+          {!isCardCollapsed && (
+            <div className="flex flex-col justify-between flex-1 mt-2 animate-in fade-in duration-300">
+              {/* Affirmation Text */}
+              <div className="my-auto py-8 text-center select-none">
+                <div className={`text-3xl sm:text-4xl ${theme.quoteColor} font-serif mb-1 select-none`}>“</div>
+                <p className={`text-2xl sm:text-3xl leading-relaxed sm:leading-relaxed select-text font-medium drop-shadow-sm ${theme.textColor} ${fontClass}`}>
+                  {currentAffirmation.text}
+                </p>
+                <div className={`text-3xl sm:text-4xl ${theme.quoteColor} font-serif mt-1 select-none`}>”</div>
+              </div>
 
-          {/* Bottom Actions — icon-only pill, roomy touch targets */}
-          <div className="flex items-center justify-center gap-2 pt-2">
-            <button
-              onClick={handlePlayChime}
-              className="flex items-center justify-center w-11 h-11 rounded-full bg-white/70 dark:bg-black/30 backdrop-blur-md active:scale-90 text-slate-700 dark:text-white transition-all shadow-sm border border-white/50 dark:border-white/10"
-              title="Звук поющей чаши (432 Гц)"
-            >
-              <Sparkles className="w-[18px] h-[18px] text-[#8B7CF6] dark:text-[#C4B5FD]" />
-            </button>
+              {/* Bottom Actions — icon-only pill, roomy touch targets */}
+              <div className="flex items-center justify-center gap-2 pt-2">
+                <button
+                  onClick={handlePlayChime}
+                  className="flex items-center justify-center w-11 h-11 rounded-full bg-white/70 dark:bg-black/30 backdrop-blur-md active:scale-90 text-slate-700 dark:text-white transition-all shadow-sm border border-white/50 dark:border-white/10"
+                  title="Звук поющей чаши (432 Гц)"
+                >
+                  <Sparkles className="w-[18px] h-[18px] text-[#8B7CF6] dark:text-[#C4B5FD]" />
+                </button>
 
-            <button
-              onClick={handleSpeechToggle}
-              className={`flex items-center justify-center w-11 h-11 rounded-full active:scale-90 transition-all shadow-sm border border-white/50 dark:border-white/10 ${
-                isSpeaking
-                  ? 'bg-[#7C6CF0] text-white shadow-md shadow-[#7C6CF0]/30'
-                  : 'bg-white/70 dark:bg-black/30 backdrop-blur-md text-slate-700 dark:text-white'
-              }`}
-              title="Прочитать аффирмацию вслух"
-            >
-              {isSpeaking ? <VolumeX className="w-[18px] h-[18px] animate-pulse" /> : <Volume2 className="w-[18px] h-[18px] text-[#7C6CF0] dark:text-[#A78BFA]" />}
-            </button>
+                <button
+                  onClick={handleSpeechToggle}
+                  className={`flex items-center justify-center w-11 h-11 rounded-full active:scale-90 transition-all shadow-sm border border-white/50 dark:border-white/10 ${
+                    isSpeaking
+                      ? 'bg-[#7C6CF0] text-white shadow-md shadow-[#7C6CF0]/30'
+                      : 'bg-white/70 dark:bg-black/30 backdrop-blur-md text-slate-700 dark:text-white'
+                  }`}
+                  title="Прочитать аффирмацию вслух"
+                >
+                  {isSpeaking ? <VolumeX className="w-[18px] h-[18px] animate-pulse" /> : <Volume2 className="w-[18px] h-[18px] text-[#7C6CF0] dark:text-[#A78BFA]" />}
+                </button>
 
-            <button
-              onClick={handleShare}
-              className="flex items-center justify-center w-11 h-11 rounded-full bg-white/70 dark:bg-black/30 backdrop-blur-md active:scale-90 text-slate-700 dark:text-white transition-all shadow-sm border border-white/50 dark:border-white/10"
-              title="Поделиться"
-            >
-              {copied ? <Check className="w-[18px] h-[18px] text-emerald-600 dark:text-emerald-400" /> : <Share2 className="w-[18px] h-[18px] text-[#7C6CF0] dark:text-[#A78BFA]" />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Bottom Swiper Navigation & Dot Indicators */}
-      <div className="w-full flex items-center justify-between pt-4 z-10">
-        <button
-          onClick={handlePrev}
-          disabled={affirmations.length <= 1}
-          className="p-3.5 rounded-full bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl text-slate-600 dark:text-zinc-300 disabled:opacity-25 disabled:pointer-events-none active:scale-90 transition-all shadow-sm"
-          title="Предыдущая аффирмация"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
-
-        <div className="flex items-center gap-1.5 max-w-[160px] overflow-x-auto no-scrollbar py-1">
-          {affirmations.slice(0, 12).map((aff, idx) => (
-            <button
-              key={aff.id || idx}
-              onClick={() => onIndexChange(idx)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                idx === currentIndex
-                  ? 'w-5 bg-[#7C6CF0] dark:bg-white'
-                  : 'w-1.5 bg-slate-300/70 dark:bg-zinc-700'
-              }`}
-            />
-          ))}
-          {affirmations.length > 12 && (
-            <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-medium ml-0.5">+{affirmations.length - 12}</span>
+                <button
+                  onClick={handleShare}
+                  className="flex items-center justify-center w-11 h-11 rounded-full bg-white/70 dark:bg-black/30 backdrop-blur-md active:scale-90 text-slate-700 dark:text-white transition-all shadow-sm border border-white/50 dark:border-white/10"
+                  title="Поделиться"
+                >
+                  {copied ? <Check className="w-[18px] h-[18px] text-emerald-600 dark:text-emerald-400" /> : <Share2 className="w-[18px] h-[18px] text-[#7C6CF0] dark:text-[#A78BFA]" />}
+                </button>
+              </div>
+            </div>
           )}
         </div>
-
-        <button
-          onClick={handleNext}
-          disabled={affirmations.length <= 1}
-          className="p-3.5 rounded-full bg-white/70 dark:bg-zinc-900/60 backdrop-blur-xl text-slate-600 dark:text-zinc-300 disabled:opacity-25 disabled:pointer-events-none active:scale-90 transition-all shadow-sm"
-          title="Следующая аффирмация"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
       </div>
+
+      {/* Expanded 3D Contemplation Touch Area when card is collapsed */}
+      {isCardCollapsed && (
+        <div 
+          className="relative z-10 w-full min-h-[380px] flex-1 flex flex-col items-center justify-center cursor-pointer select-none py-16"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onClick={() => {
+            audioManager.triggerHaptic([10]);
+            setIsCardCollapsed(false);
+          }}
+        >
+          <div className="text-[11px] text-slate-500/80 dark:text-zinc-400/80 bg-white/40 dark:bg-black/30 backdrop-blur-xl px-4 py-2 rounded-full border border-white/40 dark:border-white/10 shadow-sm hover:scale-105 active:scale-95 transition-all">
+            Нажмите в любое место, чтобы развернуть
+          </div>
+        </div>
+      )}
     </div>
   );
 }

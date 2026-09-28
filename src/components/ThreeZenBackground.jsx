@@ -198,7 +198,7 @@ export default function ThreeZenBackground({
       clumpGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
       const clumpMaterial = new THREE.PointsMaterial({
-        size: isDarkMode ? 0.31 : 0.24,
+        size: isDarkMode ? 0.155 : 0.12,
         vertexColors: true,
         map: particleTexture,
         transparent: true,
@@ -354,7 +354,7 @@ export default function ThreeZenBackground({
       jellyGeometry.setAttribute('color', new THREE.BufferAttribute(jellyColors, 3));
 
       const jellyMaterial = new THREE.PointsMaterial({
-        size: isDarkMode ? 0.32 : 0.25,
+        size: isDarkMode ? 0.16 : 0.125,
         vertexColors: true,
         map: particleTexture,
         transparent: true,
@@ -498,7 +498,7 @@ export default function ThreeZenBackground({
       lotusGeometry.setAttribute('color', new THREE.BufferAttribute(lotusColors, 3));
 
       const lotusMaterial = new THREE.PointsMaterial({
-        size: isDarkMode ? 0.31 : 0.24,
+        size: isDarkMode ? 0.155 : 0.12,
         vertexColors: true,
         map: particleTexture,
         transparent: true,
