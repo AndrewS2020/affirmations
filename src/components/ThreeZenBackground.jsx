@@ -196,35 +196,37 @@ export default function ThreeZenBackground({
 
       const elapsedTime = clock.getElapsedTime();
 
-      // Smooth pointer damping
-      mouseRef.current.x += (mouseRef.current.targetX - mouseRef.current.x) * 0.05;
-      mouseRef.current.y += (mouseRef.current.targetY - mouseRef.current.y) * 0.05;
+      // Smooth pointer damping (gentle and smooth)
+      mouseRef.current.x += (mouseRef.current.targetX - mouseRef.current.x) * 0.028;
+      mouseRef.current.y += (mouseRef.current.targetY - mouseRef.current.y) * 0.028;
 
       // Parallax Camera movement
-      camera.position.x = mouseRef.current.x * 2.6;
-      camera.position.y = mouseRef.current.y * 2.6;
+      camera.position.x = mouseRef.current.x * 2.0;
+      camera.position.y = mouseRef.current.y * 2.0;
       camera.lookAt(0, 0, 0);
 
-      // Supernova explosion decay on like
+      // Supernova explosion decay on like (smooth dissipation)
       if (pulseRef.current > 0.005) {
-        pulseRef.current *= 0.93;
+        pulseRef.current *= 0.95;
       } else {
         pulseRef.current = 0;
       }
 
-      // Swipe twist impulse decay on card change
+      // Swipe twist impulse decay on card change (smooth float)
       if (swipeAnimRef.current > 0.005) {
-        swipeAnimRef.current *= 0.91;
+        swipeAnimRef.current *= 0.94;
       } else {
         swipeAnimRef.current = 0;
       }
 
-      const pulseEnergy = pulseRef.current * 4.5;
-      const swipeTwist = swipeAnimRef.current * 1.8;
+      // Meditative, slow time scale (~3.5x slower, hypnotic liquid flow)
+      const slowTime = elapsedTime * 0.28;
+      const pulseEnergy = pulseRef.current * 3.8;
+      const swipeTwist = swipeAnimRef.current * 0.8;
 
-      // Pointer influence: fluid gravity attractor that bends the blob towards the touch
-      const touchGravX = mouseRef.current.x * 1.8;
-      const touchGravY = mouseRef.current.y * 1.8;
+      // Pointer influence: fluid gentle gravity attractor
+      const touchGravX = mouseRef.current.x * 1.2;
+      const touchGravY = mouseRef.current.y * 1.2;
 
       const posArray = geometry.attributes.position.array;
 
@@ -242,29 +244,26 @@ export default function ThreeZenBackground({
         const phase1 = noiseAttrs[i4 + 2];
         const phase2 = noiseAttrs[i4 + 3];
 
-        // Slowly swirl the angles
-        theta += (speed * 0.008) + (swipeTwist * 0.03);
+        // Meditative, slow swirl
+        theta += (speed * 0.0025) + (swipeTwist * 0.012);
         seeds[i4 + 1] = theta;
 
-        // Harmonic 3D turbulence waves: creates the organic, shapeless, oozing deformation
-        // Wave 1: primary blob undulation
-        const wave1 = Math.sin(theta * fTheta + elapsedTime * 1.2 + phase1) * Math.cos(phi * fPhi + elapsedTime * 0.9);
-        // Wave 2: high-frequency surface ripple
-        const wave2 = Math.sin(phi * 4.0 - elapsedTime * 1.5 + phase2) * 0.28;
-        // Wave 3: deep breathing expansion
-        const wave3 = Math.cos(baseR * 0.5 + theta * 2.0 + elapsedTime * 0.7) * 0.22;
+        // Harmonic 3D turbulence waves: slow, liquid, hypnotic deformation
+        const wave1 = Math.sin(theta * fTheta + slowTime * 1.1 + phase1) * Math.cos(phi * fPhi + slowTime * 0.8);
+        const wave2 = Math.sin(phi * 3.0 - slowTime * 1.2 + phase2) * 0.22;
+        const wave3 = Math.cos(baseR * 0.4 + theta * 1.5 + slowTime * 0.6) * 0.18;
 
-        // Dynamic morphed radius of the shapeless clump
-        const morphR = baseR * (1.0 + (wave1 * 0.32) + wave2 + wave3) + pulseEnergy * (0.8 + (i % 7) * 0.4);
+        // Dynamic morphed radius of the amorphous clump
+        const morphR = baseR * (1.0 + (wave1 * 0.28) + wave2 + wave3) + pulseEnergy * (0.8 + (i % 7) * 0.35);
 
-        // Current spherical position with chaotic flutter
-        const curTheta = theta + Math.sin(elapsedTime * 0.4 + phase1) * 0.12;
-        const curPhi = phi + Math.cos(elapsedTime * 0.5 + phase2) * 0.10;
+        // Gentle organic drift
+        const curTheta = theta + Math.sin(slowTime * 0.6 + phase1) * 0.08;
+        const curPhi = phi + Math.cos(slowTime * 0.7 + phase2) * 0.06;
 
         const cosPhi = Math.cos(curPhi);
         const x = morphR * Math.cos(curTheta) * cosPhi + touchGravX;
         const y = morphR * Math.sin(curTheta) * cosPhi + touchGravY;
-        const z = morphR * Math.sin(curPhi) * 0.9;
+        const z = morphR * Math.sin(curPhi) * 0.88;
 
         posArray[i3] = x;
         posArray[i3 + 1] = y;
@@ -273,13 +272,13 @@ export default function ThreeZenBackground({
 
       geometry.attributes.position.needsUpdate = true;
 
-      // Slowly rotate the entire amorphous clump in 3D space
-      clumpPoints.rotation.y = elapsedTime * 0.06 + (swipeAnimRef.current * 0.6);
-      clumpPoints.rotation.x = Math.sin(elapsedTime * 0.04) * 0.12;
-      clumpPoints.rotation.z = Math.cos(elapsedTime * 0.03) * 0.08;
+      // Meditative, slow rotation of the entire clump in 3D space
+      clumpPoints.rotation.y = slowTime * 0.07 + (swipeAnimRef.current * 0.3);
+      clumpPoints.rotation.x = Math.sin(slowTime * 0.05) * 0.08;
+      clumpPoints.rotation.z = Math.cos(slowTime * 0.04) * 0.05;
 
       // Pulse core light
-      coreLight.intensity = (isDarkMode ? 3.2 : 2.0) + (pulseRef.current * 5.0);
+      coreLight.intensity = (isDarkMode ? 3.0 : 2.0) + (pulseRef.current * 4.0);
 
       renderer.render(scene, camera);
     };
