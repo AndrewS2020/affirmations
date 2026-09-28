@@ -377,6 +377,7 @@ export default function App() {
                 onToggleFavorite={handleToggleFavorite}
                 onOpenScheduleModal={(aff) => setScheduleModalAffirmation(aff)}
                 onOpenEditModal={(aff) => setCreateEditModalData({ isOpen: true, affirmation: aff })}
+                isDarkMode={isDarkMode}
               />
             )}
 
@@ -401,7 +402,7 @@ export default function App() {
             )}
 
             {activeTab === 'meditation' && (
-              <BreatheMeditation affirmations={affirmations} />
+              <BreatheMeditation affirmations={affirmations} isDarkMode={isDarkMode} />
             )}
           </>
         )}

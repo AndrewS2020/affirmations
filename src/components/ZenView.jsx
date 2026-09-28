@@ -1,26 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Heart,
-  Share2,
-  Volume2,
-  VolumeX,
-  Sparkles,
-  ChevronLeft,
-  ChevronRight,
-  Bell,
-  Palette,
-  Check
+import { 
+  Heart, 
+  Share2, 
+  Volume2, 
+  VolumeX, 
+  Sparkles, 
+  ChevronLeft, 
+  ChevronRight, 
+  Bell, 
+  Palette, 
+  Check,
+  Layers
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { getTheme, getFontClass, THEMES } from '../utils/themes';
 import { audioManager } from '../utils/audio';
+import ThreeZenBackground from './ThreeZenBackground';
 
-export default function ZenView({
-  affirmations,
-  currentIndex,
-  onIndexChange,
-  onToggleFavorite,
-  onOpenScheduleModal
+export default function ZenView({ 
+  affirmations, 
+  currentIndex, 
+  onIndexChange, 
+  onToggleFavorite, 
+  onOpenScheduleModal,
+  isDarkMode = true
 }) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showThemePicker, setShowThemePicker] = useState(false);
@@ -28,6 +31,9 @@ export default function ZenView({
   const [copied, setCopied] = useState(false);
   const [dragX, setDragX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [is3DEnabled, setIs3DEnabled] = useState(true);
+  const [pulseCount, setPulseCount] = useState(0);
+  const [swipeCount, setSwipeCount] = useState(0);
 
   // Touch swipe handling
   const touchStartX = useRef(0);
@@ -51,12 +57,14 @@ export default function ZenView({
   const handleNext = () => {
     if (affirmations.length <= 1) return;
     audioManager.triggerHaptic([15]);
+    setSwipeCount(c => c + 1);
     onIndexChange((currentIndex + 1) % affirmations.length);
   };
 
   const handlePrev = () => {
     if (affirmations.length <= 1) return;
     audioManager.triggerHaptic([15]);
+    setSwipeCount(c => c + 1);
     onIndexChange((currentIndex - 1 + affirmations.length) % affirmations.length);
   };
 
@@ -93,6 +101,7 @@ export default function ZenView({
     e.stopPropagation();
     audioManager.playLikeSound();
     audioManager.triggerHaptic([20, 50, 20]);
+    setPulseCount(c => c + 1); // Trigger 3D Supernova shockwave
     onToggleFavorite(currentAffirmation.id);
 
     if (!currentAffirmation.isFavorite) {
@@ -123,6 +132,7 @@ export default function ZenView({
     e.stopPropagation();
     audioManager.playBowlChime();
     audioManager.triggerHaptic([30]);
+    setPulseCount(c => c + 1);
   };
 
   const handleShare = async (e) => {
@@ -165,11 +175,20 @@ export default function ZenView({
 
   return (
     <div className="relative w-full max-w-lg mx-auto flex flex-col items-stretch px-4 pt-1 pb-28">
-      {/* Background Animated Gradient Orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
-        <div className={`absolute top-1/4 -left-16 w-72 h-72 rounded-full ${theme.orbColors[0]} blur-3xl opacity-40 animate-float transition-colors duration-700`} />
-        <div className={`absolute bottom-1/4 -right-16 w-80 h-80 rounded-full ${theme.orbColors[1]} blur-3xl opacity-30 animate-pulse-slow transition-colors duration-700`} />
-        <div className={`absolute top-1/2 left-1/3 w-52 h-52 rounded-full ${theme.orbColors[2]} blur-2xl opacity-20 transition-colors duration-700`} />
+      {/* Three.js Ethereal 3D WebGL Background */}
+      {is3DEnabled && (
+        <ThreeZenBackground 
+          theme={theme} 
+          isDarkMode={isDarkMode} 
+          pulseTrigger={pulseCount} 
+          swipeTrigger={swipeCount} 
+        />
+      )}
+
+      {/* Background Soft Orbs Fallback */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-20">
+        <div className={`absolute top-1/4 -left-16 w-72 h-72 rounded-full ${theme.orbColors[0]} blur-3xl opacity-30 animate-float transition-colors duration-700`} />
+        <div className={`absolute bottom-1/4 -right-16 w-80 h-80 rounded-full ${theme.orbColors[1]} blur-3xl opacity-25 animate-pulse-slow transition-colors duration-700`} />
       </div>
 
       {/* Slim Floating Toolbar */}
@@ -180,17 +199,37 @@ export default function ZenView({
           </span>
         </div>
 
-        <button
-          onClick={() => setShowThemePicker(!showThemePicker)}
-          className={`p-2.5 rounded-full backdrop-blur-xl border transition-all duration-200 active:scale-90 ${
-            showThemePicker
-              ? 'bg-[#7C6CF0] text-white border-[#7C6CF0] shadow-md shadow-[#7C6CF0]/30'
-              : 'bg-white/70 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 border-white/60 dark:border-white/5 shadow-sm'
-          }`}
-          title="Сменить тему оформления"
-        >
-          <Palette className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* 3D WebGL Toggle */}
+          <button
+            onClick={() => {
+              audioManager.triggerHaptic([10]);
+              setIs3DEnabled(!is3DEnabled);
+            }}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full backdrop-blur-xl border transition-all text-xs font-semibold ${
+              is3DEnabled
+                ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 border-cyan-400/30 shadow-sm'
+                : 'bg-white/70 dark:bg-zinc-900/50 text-slate-400 border-white/60 dark:border-white/5'
+            }`}
+            title="Переключить 3D эффект"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>3D</span>
+          </button>
+
+          {/* Theme customizer button */}
+          <button
+            onClick={() => setShowThemePicker(!showThemePicker)}
+            className={`p-2.5 rounded-full backdrop-blur-xl border transition-all duration-200 active:scale-90 ${
+              showThemePicker
+                ? 'bg-[#7C6CF0] text-white border-[#7C6CF0] shadow-md shadow-[#7C6CF0]/30'
+                : 'bg-white/70 dark:bg-zinc-900/50 text-slate-500 dark:text-zinc-400 border-white/60 dark:border-white/5 shadow-sm'
+            }`}
+            title="Сменить тему оформления"
+          >
+            <Palette className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Theme Picker Dropdown */}
@@ -235,7 +274,7 @@ export default function ZenView({
             opacity: 1 - Math.min(Math.abs(dragX) / 400, 0.4),
             transition: isDragging ? 'none' : 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease'
           }}
-          className={`relative w-full rounded-[32px] p-6 sm:p-8 flex flex-col justify-between min-h-[360px] max-h-[480px] border ${theme.cardGradient} ${theme.border} ${theme.glow}`}
+          className={`relative w-full rounded-[32px] p-6 sm:p-8 flex flex-col justify-between min-h-[360px] max-h-[480px] border backdrop-blur-xl ${theme.cardGradient} ${theme.border} ${theme.glow}`}
         >
           {/* Card Header */}
           <div className="flex items-center justify-between">
@@ -248,7 +287,7 @@ export default function ZenView({
                 onClick={() => onOpenScheduleModal(currentAffirmation)}
                 className={`p-2.5 rounded-full transition-all duration-200 active:scale-90 ${
                   currentAffirmation.schedule?.enabled
-                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
+                    ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
                     : 'bg-black/[0.04] dark:bg-white/10 text-slate-500 dark:text-zinc-400'
                 }`}
                 title="Настроить график уведомлений"
@@ -272,9 +311,11 @@ export default function ZenView({
 
           {/* Affirmation Text */}
           <div className="my-auto py-8 text-center select-none">
+            <div className={`text-3xl sm:text-4xl ${theme.quoteColor} font-serif mb-1 select-none`}>“</div>
             <p className={`text-2xl sm:text-3xl leading-relaxed sm:leading-relaxed select-text font-medium ${theme.textColor} ${fontClass}`}>
               {currentAffirmation.text}
             </p>
+            <div className={`text-3xl sm:text-4xl ${theme.quoteColor} font-serif mt-1 select-none`}>”</div>
           </div>
 
           {/* Bottom Actions — icon-only pill, roomy touch targets */}

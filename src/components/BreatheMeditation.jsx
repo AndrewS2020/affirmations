@@ -8,9 +8,10 @@ import {
   Volume2, 
   VolumeX, 
   EyeOff,
-  BellRing
+  Sparkle
 } from 'lucide-react';
 import { audioManager } from '../utils/audio';
+import ThreeBreatheMandala from './ThreeBreatheMandala';
 
 const BREATH_MODES = {
   relax: {
@@ -34,13 +35,14 @@ const BREATH_MODES = {
   }
 };
 
-export default function BreatheMeditation({ affirmations }) {
+export default function BreatheMeditation({ affirmations, isDarkMode = true }) {
   const [modeKey, setModeKey] = useState('relax');
   const [isActive, setIsActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(4);
   const [sessionCount, setSessionCount] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [use3DMandala, setUse3DMandala] = useState(true);
 
   const mode = BREATH_MODES[modeKey];
   const currentStep = mode.steps[stepIndex];
@@ -54,7 +56,6 @@ export default function BreatheMeditation({ affirmations }) {
   const prevStepRef = useRef(null);
   useEffect(() => {
     if (isActive && soundEnabled) {
-      // Play sound for current phase
       audioManager.playBreathSound(currentStep.action);
     }
     prevStepRef.current = stepIndex;
@@ -66,11 +67,9 @@ export default function BreatheMeditation({ affirmations }) {
       interval = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
-            // Move to next step
             const nextStepIndex = (stepIndex + 1) % mode.steps.length;
             if (nextStepIndex === 0) {
               setSessionCount(c => c + 1);
-              // Pick new affirmation on full cycle completion
               if (affirmations.length > 0) {
                 const randomAff = affirmations[Math.floor(Math.random() * affirmations.length)];
                 setActiveAffirmation(randomAff.text);
@@ -94,7 +93,6 @@ export default function BreatheMeditation({ affirmations }) {
     if (!isActive) {
       audioManager.playBowlChime();
       if (soundEnabled) {
-        // Start first breath sound after a short bowl introduction
         setTimeout(() => {
           audioManager.playBreathSound(mode.steps[stepIndex].action);
         }, 600);
@@ -137,16 +135,16 @@ export default function BreatheMeditation({ affirmations }) {
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto px-4 py-3 flex flex-col items-center justify-between min-h-[calc(100vh-140px)] pb-24 text-zinc-900 dark:text-zinc-100">
+    <div className="w-full max-w-lg mx-auto px-4 py-2 flex flex-col items-center justify-between min-h-[calc(100vh-140px)] pb-28 text-slate-900 dark:text-zinc-100">
       {/* Top Header Controls */}
       <div className="w-full flex items-center justify-between gap-2">
         {/* Mode Switcher */}
-        <div className="flex items-center gap-1.5 bg-white/60 dark:bg-zinc-900/50 p-1 rounded-2xl">
+        <div className="flex items-center gap-1.5 p-1 bg-white/70 dark:bg-zinc-900/60 rounded-full border border-white/60 dark:border-white/5">
           {Object.entries(BREATH_MODES).map(([k, m]) => (
             <button
               key={k}
               onClick={() => handleSwitchMode(k)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                 modeKey === k
                   ? 'bg-[#7C6CF0] text-white shadow-sm'
                   : 'text-slate-500 dark:text-zinc-400'
@@ -157,59 +155,105 @@ export default function BreatheMeditation({ affirmations }) {
           ))}
         </div>
 
-        {/* Sound Cues Toggle for Eyes-Closed Practice */}
-        <button
-          onClick={handleToggleSound}
-          className={`flex items-center justify-center w-10 h-10 rounded-full transition-all ${
-            soundEnabled
-              ? 'bg-[#EFEAFE] dark:bg-purple-500/15 text-[#6A5BF5] dark:text-[#A78BFA]'
-              : 'bg-white/70 dark:bg-zinc-900 text-slate-400'
-          }`}
-          title="Звук фаз дыхания для практики с закрытыми глазами"
-        >
-          {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-        </button>
+        {/* 3D Mandala & Sound Controls */}
+        <div className="flex items-center gap-2">
+          {/* Toggle 3D Sacred Lotus */}
+          <button
+            onClick={() => {
+              audioManager.triggerHaptic([10]);
+              setUse3DMandala(!use3DMandala);
+            }}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+              use3DMandala
+                ? 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 border-cyan-500/30 shadow-sm'
+                : 'bg-white/70 dark:bg-zinc-900 text-slate-400 border-white/60 dark:border-white/5'
+            }`}
+            title="Переключить 3D Цветок / 2D круг"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>3D</span>
+          </button>
+
+          {/* Sound Cues Toggle for Eyes-Closed Practice */}
+          <button
+            onClick={handleToggleSound}
+            className={`flex items-center justify-center w-10 h-10 rounded-full transition-all border ${
+              soundEnabled
+                ? 'bg-[#EFEAFE] dark:bg-purple-500/15 text-[#6A5BF5] dark:text-[#A78BFA] border-purple-300/40'
+                : 'bg-white/70 dark:bg-zinc-900 text-slate-400 border-white/60 dark:border-white/5'
+            }`}
+            title="Звук фаз дыхания для практики с закрытыми глазами"
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </button>
+        </div>
       </div>
 
       {/* Eyes Closed Practice Hint Banner */}
-      <div className="w-full mt-3 px-3.5 py-2.5 rounded-2xl bg-[#EFEAFE]/70 dark:bg-purple-950/30 flex items-center gap-2 text-[11px] text-[#6A5BF5] dark:text-purple-300">
+      <div className="w-full mt-3 px-3.5 py-2 rounded-2xl bg-[#EFEAFE]/80 dark:bg-purple-950/30 border border-purple-200/60 dark:border-purple-500/20 flex items-center gap-2 text-[11px] text-[#6A5BF5] dark:text-purple-300">
         <EyeOff className="w-4 h-4 flex-shrink-0 text-[#7C6CF0] dark:text-[#A78BFA]" />
         <span className="leading-snug">
-          <strong>С закрытыми глазами:</strong> восходящий тон — вдох, колокольчик — задержка, нисходящий — выдох.
+          <strong>Медитация с закрытыми глазами:</strong> восходящий тон — вдох, колокольчик — задержка, нисходящий — выдох.
         </span>
       </div>
 
-      {/* Main Breathing Circle */}
-      <div className="relative flex items-center justify-center my-auto py-8">
+      {/* Main Breathing Center (3D Lotus Mandala or 2D Ring) */}
+      <div className="relative flex items-center justify-center my-auto py-4">
         {/* Ambient Glows */}
         <div className={`absolute w-72 h-72 rounded-full bg-cyan-500/15 dark:bg-cyan-500/10 blur-3xl transition-all duration-1000 ${isActive ? 'opacity-80 scale-125' : 'opacity-20'}`} />
         <div className={`absolute w-64 h-64 rounded-full bg-purple-500/20 dark:bg-purple-500/15 blur-2xl transition-all duration-1000 ${isActive ? 'opacity-90 scale-110' : 'opacity-20'}`} />
 
-        {/* Outer Ring */}
-        <div className={`relative w-64 h-64 sm:w-72 sm:h-72 rounded-full backdrop-blur-xl flex flex-col items-center justify-center transition-transform duration-[4000ms] ease-in-out ${getCircleScale()} bg-gradient-to-br from-[#DCD3FF]/80 via-[#C9BDF8]/70 to-[#BFEEE3]/80 dark:from-indigo-950/70 dark:via-purple-950/50 dark:to-cyan-950/70 shadow-2xl shadow-[#7C6CF0]/15 dark:shadow-[0_0_60px_rgba(168,85,247,0.3)]`}>
-          <Wind className={`w-8 h-8 text-cyan-600 dark:text-cyan-300 mb-2 transition-opacity duration-500 ${isActive ? 'opacity-90' : 'opacity-40'}`} />
-          
-          <span className="text-2xl sm:text-3xl font-bold tracking-wider uppercase text-zinc-800 dark:text-zinc-100">
-            {isActive ? currentStep.name : 'Нажмите Старт'}
-          </span>
+        {use3DMandala ? (
+          <div className="relative flex items-center justify-center">
+            {/* 3D WebGL Lotus Mandala */}
+            <ThreeBreatheMandala 
+              currentAction={currentStep.action} 
+              isActive={isActive} 
+              timeLeft={timeLeft} 
+              totalDuration={currentStep.duration}
+              isDarkMode={isDarkMode}
+            />
 
-          <span className="text-4xl sm:text-5xl font-mono font-extrabold text-[#6A5BF5] dark:text-cyan-300 my-1">
-            {isActive ? timeLeft : '—'}
-          </span>
+            {/* Floating Frosted Glass Center Counter */}
+            <div className="absolute pointer-events-none flex flex-col items-center justify-center w-28 h-28 rounded-full bg-white/75 dark:bg-zinc-950/75 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-xl">
+              <span className="text-xs uppercase font-bold tracking-widest text-[#7C6CF0] dark:text-cyan-300 mb-0.5">
+                {isActive ? currentStep.name : 'Старт'}
+              </span>
+              <span className="text-3xl font-mono font-extrabold text-slate-800 dark:text-white my-0.5">
+                {isActive ? timeLeft : '—'}
+              </span>
+              <span className="text-[10px] text-slate-400 dark:text-zinc-400">
+                Цикл: {sessionCount}
+              </span>
+            </div>
+          </div>
+        ) : (
+          /* Classic 2D Breathing Ring */
+          <div className={`relative w-64 h-64 sm:w-72 sm:h-72 rounded-full backdrop-blur-xl flex flex-col items-center justify-center transition-transform duration-[4000ms] ease-in-out ${getCircleScale()} bg-gradient-to-br from-[#DCD3FF]/80 via-[#C9BDF8]/70 to-[#BFEEE3]/80 dark:from-indigo-950/70 dark:via-purple-950/50 dark:to-cyan-950/70 shadow-2xl shadow-[#7C6CF0]/15 dark:shadow-[0_0_60px_rgba(168,85,247,0.3)] border border-white/40 dark:border-white/10`}>
+            <Wind className={`w-8 h-8 text-cyan-600 dark:text-cyan-300 mb-2 transition-opacity duration-500 ${isActive ? 'opacity-90' : 'opacity-40'}`} />
+            
+            <span className="text-2xl sm:text-3xl font-bold tracking-wider uppercase text-zinc-800 dark:text-zinc-100">
+              {isActive ? currentStep.name : 'Нажмите Старт'}
+            </span>
 
-          <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
-            Цикл: {sessionCount}
-          </span>
-        </div>
+            <span className="text-4xl sm:text-5xl font-mono font-extrabold text-[#6A5BF5] dark:text-cyan-300 my-1">
+              {isActive ? timeLeft : '—'}
+            </span>
+
+            <span className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+              Цикл: {sessionCount}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Step Hint / Affirmation Guidance Card */}
-      <div className="w-full p-4 rounded-2xl bg-white/80 dark:bg-zinc-900/70 text-center space-y-1 mb-4 backdrop-blur-md shadow-sm">
+      <div className="w-full p-4 rounded-3xl bg-white/80 dark:bg-zinc-900/70 text-center space-y-1 mb-3 backdrop-blur-xl border border-white/60 dark:border-white/5 shadow-sm">
         <div className="flex items-center justify-center gap-1.5 text-[#7C6CF0] dark:text-[#A78BFA] text-xs font-semibold">
           <Sparkles className="w-3.5 h-3.5" />
           <span>{isActive ? currentStep.hint : 'Фокус внимания:'}</span>
         </div>
-        <p className="text-xs sm:text-sm text-zinc-700 dark:text-zinc-200 font-serif italic leading-relaxed">
+        <p className="text-xs sm:text-sm text-slate-700 dark:text-zinc-200 font-serif italic leading-relaxed">
           «{activeAffirmation}»
         </p>
       </div>
@@ -218,7 +262,7 @@ export default function BreatheMeditation({ affirmations }) {
       <div className="flex items-center gap-4">
         <button
           onClick={handleReset}
-          className="p-3.5 rounded-full bg-white/80 dark:bg-zinc-900 text-slate-500 dark:text-zinc-400 active:scale-90 transition-all shadow-sm"
+          className="p-3.5 rounded-full bg-white/70 dark:bg-zinc-900 border border-white/60 dark:border-zinc-800 text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 active:scale-95 transition-all shadow-sm"
           title="Сбросить"
         >
           <RotateCcw className="w-5 h-5" />
@@ -228,8 +272,8 @@ export default function BreatheMeditation({ affirmations }) {
           onClick={handleTogglePlay}
           className={`flex items-center gap-2 px-8 py-3.5 rounded-full text-sm font-bold shadow-xl transition-all active:scale-95 ${
             isActive
-              ? 'bg-white/80 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200'
-              : 'bg-gradient-to-r from-[#8B7CF6] via-[#7C6CF6] to-[#4FD8C0] text-white shadow-[0_10px_24px_rgba(124,108,240,0.38)]'
+              ? 'bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-zinc-700'
+              : 'bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 text-white shadow-purple-950/40 hover:opacity-95'
           }`}
         >
           {isActive ? (

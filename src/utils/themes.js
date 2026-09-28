@@ -9,7 +9,12 @@ export const THEMES = [
     badge: 'bg-cyan-100/90 text-cyan-900 border-cyan-300/70 dark:bg-cyan-500/20 dark:text-cyan-200 dark:border-cyan-500/30',
     orbColors: ['bg-cyan-400/25 dark:bg-cyan-500/20', 'bg-indigo-400/20 dark:bg-indigo-600/20', 'bg-teal-300/25 dark:bg-teal-400/20'],
     textColor: 'text-slate-900 dark:text-slate-100',
-    quoteColor: 'text-cyan-400/40 dark:text-cyan-100/20'
+    quoteColor: 'text-cyan-400/40 dark:text-cyan-100/20',
+    threeColors: {
+      primary: '#06b6d4',
+      secondary: '#6366f1',
+      accent: '#14b8a6'
+    }
   },
   {
     id: 'sunset',
@@ -21,7 +26,12 @@ export const THEMES = [
     badge: 'bg-rose-100/90 text-rose-900 border-rose-300/70 dark:bg-rose-500/20 dark:text-rose-200 dark:border-rose-500/30',
     orbColors: ['bg-rose-400/25 dark:bg-rose-500/20', 'bg-amber-400/20 dark:bg-amber-600/20', 'bg-orange-300/25 dark:bg-orange-400/20'],
     textColor: 'text-slate-900 dark:text-rose-50',
-    quoteColor: 'text-rose-400/40 dark:text-rose-100/20'
+    quoteColor: 'text-rose-400/40 dark:text-rose-100/20',
+    threeColors: {
+      primary: '#f43f5e',
+      secondary: '#f97316',
+      accent: '#fbbf24'
+    }
   },
   {
     id: 'gold',
@@ -33,7 +43,12 @@ export const THEMES = [
     badge: 'bg-amber-100/90 text-amber-900 border-amber-300/70 dark:bg-amber-500/20 dark:text-amber-200 dark:border-amber-500/30',
     orbColors: ['bg-amber-400/25 dark:bg-amber-500/20', 'bg-yellow-400/20 dark:bg-yellow-600/20', 'bg-orange-300/25 dark:bg-orange-500/20'],
     textColor: 'text-slate-900 dark:text-amber-50',
-    quoteColor: 'text-amber-400/40 dark:text-amber-100/20'
+    quoteColor: 'text-amber-400/40 dark:text-amber-100/20',
+    threeColors: {
+      primary: '#f59e0b',
+      secondary: '#eab308',
+      accent: '#d97706'
+    }
   },
   {
     id: 'emerald',
@@ -45,7 +60,12 @@ export const THEMES = [
     badge: 'bg-emerald-100/90 text-emerald-900 border-emerald-300/70 dark:bg-emerald-500/20 dark:text-emerald-200 dark:border-emerald-500/30',
     orbColors: ['bg-emerald-400/25 dark:bg-emerald-500/20', 'bg-teal-400/20 dark:bg-teal-600/20', 'bg-green-300/25 dark:bg-green-400/20'],
     textColor: 'text-slate-900 dark:text-emerald-50',
-    quoteColor: 'text-emerald-400/40 dark:text-emerald-100/20'
+    quoteColor: 'text-emerald-400/40 dark:text-emerald-100/20',
+    threeColors: {
+      primary: '#10b981',
+      secondary: '#059669',
+      accent: '#34d399'
+    }
   },
   {
     id: 'lavender',
@@ -57,7 +77,12 @@ export const THEMES = [
     badge: 'bg-purple-100/90 text-purple-900 border-purple-300/70 dark:bg-purple-500/20 dark:text-purple-200 dark:border-purple-500/30',
     orbColors: ['bg-purple-400/25 dark:bg-purple-500/20', 'bg-violet-400/20 dark:bg-violet-600/20', 'bg-fuchsia-300/25 dark:bg-fuchsia-400/20'],
     textColor: 'text-slate-900 dark:text-purple-50',
-    quoteColor: 'text-purple-400/40 dark:text-purple-100/20'
+    quoteColor: 'text-purple-400/40 dark:text-purple-100/20',
+    threeColors: {
+      primary: '#a855f7',
+      secondary: '#8b5cf6',
+      accent: '#ec4899'
+    }
   },
   {
     id: 'cosmic',
@@ -69,7 +94,12 @@ export const THEMES = [
     badge: 'bg-fuchsia-100/90 text-fuchsia-900 border-fuchsia-300/70 dark:bg-fuchsia-500/20 dark:text-fuchsia-200 dark:border-fuchsia-500/30',
     orbColors: ['bg-fuchsia-400/25 dark:bg-fuchsia-500/20', 'bg-blue-400/20 dark:bg-blue-600/20', 'bg-indigo-300/25 dark:bg-indigo-400/20'],
     textColor: 'text-slate-900 dark:text-pink-50',
-    quoteColor: 'text-fuchsia-400/40 dark:text-fuchsia-100/20'
+    quoteColor: 'text-fuchsia-400/40 dark:text-fuchsia-100/20',
+    threeColors: {
+      primary: '#d946ef',
+      secondary: '#3b82f6',
+      accent: '#f43f5e'
+    }
   },
   {
     id: 'rose',
@@ -81,7 +111,12 @@ export const THEMES = [
     badge: 'bg-pink-100/90 text-pink-900 border-pink-300/70 dark:bg-pink-500/20 dark:text-pink-200 dark:border-pink-500/30',
     orbColors: ['bg-pink-400/25 dark:bg-pink-500/20', 'bg-rose-400/20 dark:bg-rose-500/20', 'bg-red-300/25 dark:bg-red-400/20'],
     textColor: 'text-slate-900 dark:text-pink-50',
-    quoteColor: 'text-pink-400/40 dark:text-pink-100/20'
+    quoteColor: 'text-pink-400/40 dark:text-pink-100/20',
+    threeColors: {
+      primary: '#ec4899',
+      secondary: '#fb7185',
+      accent: '#f43f5e'
+    }
   },
   {
     id: 'minimal',
@@ -93,7 +128,12 @@ export const THEMES = [
     badge: 'bg-slate-200/80 text-slate-800 border-slate-300 dark:bg-white/10 dark:text-white dark:border-white/20',
     orbColors: ['bg-slate-300/25 dark:bg-white/10', 'bg-zinc-400/20 dark:bg-zinc-600/20', 'bg-stone-300/25 dark:bg-stone-500/20'],
     textColor: 'text-slate-900 dark:text-white',
-    quoteColor: 'text-slate-400/40 dark:text-zinc-200/20'
+    quoteColor: 'text-slate-400/40 dark:text-zinc-200/20',
+    threeColors: {
+      primary: '#94a3b8',
+      secondary: '#cbd5e1',
+      accent: '#64748b'
+    }
   }
 ];
 
