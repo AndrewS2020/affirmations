@@ -272,10 +272,14 @@ export default function ThreeZenBackground({
 
       geometry.attributes.position.needsUpdate = true;
 
-      // Meditative, slow rotation of the entire clump in 3D space
-      clumpPoints.rotation.y = slowTime * 0.07 + (swipeAnimRef.current * 0.3);
-      clumpPoints.rotation.x = Math.sin(slowTime * 0.05) * 0.08;
-      clumpPoints.rotation.z = Math.cos(slowTime * 0.04) * 0.05;
+      // Continuous, clear rotation of the clump around its own axis (~36s for full 360° turn)
+      // Slight celestial tilt (20°) highlights the full 3D depth and volume as it spins
+      const axisTiltX = 0.32 + Math.sin(slowTime * 0.4) * 0.06;
+      const axisTiltZ = 0.16 + Math.cos(slowTime * 0.3) * 0.05;
+
+      clumpPoints.rotation.x = axisTiltX;
+      clumpPoints.rotation.z = axisTiltZ;
+      clumpPoints.rotation.y = (elapsedTime * 0.16) + (swipeAnimRef.current * 0.85);
 
       // Pulse core light
       coreLight.intensity = (isDarkMode ? 3.0 : 2.0) + (pulseRef.current * 4.0);
