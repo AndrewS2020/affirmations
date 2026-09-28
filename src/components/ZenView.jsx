@@ -185,6 +185,7 @@ export default function ZenView({
           isDarkMode={isDarkMode} 
           pulseTrigger={pulseCount} 
           swipeTrigger={swipeCount} 
+          affirmationId={currentAffirmation?.id}
         />
       )}
 

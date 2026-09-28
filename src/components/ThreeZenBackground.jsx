@@ -27,7 +27,8 @@ export default function ThreeZenBackground({
   theme, 
   isDarkMode = true, 
   pulseTrigger = 0, 
-  swipeTrigger = 0 
+  swipeTrigger = 0,
+  affirmationId
 }) {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
@@ -36,8 +37,51 @@ export default function ThreeZenBackground({
   const pulseRef = useRef(0);
   const swipeAnimRef = useRef(0);
 
+  // Dynamic fluid morphing parameters for the amorphous clump
+  const currentMorph = useRef({
+    fTheta: 3.0,
+    fPhi: 2.0,
+    stretchX: 1.0,
+    stretchY: 1.0,
+    stretchZ: 0.88,
+    turbAmp: 0.22,
+    coreComp: 1.0
+  });
+
+  const targetMorph = useRef({
+    fTheta: 3.0,
+    fPhi: 2.0,
+    stretchX: 1.0,
+    stretchY: 1.0,
+    stretchZ: 0.88,
+    turbAmp: 0.22,
+    coreComp: 1.0
+  });
+
   // Mouse / Touch interaction coords
   const mouseRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
+
+  // When affirmation changes or on swipe, generate a unique new amorphous shape!
+  useEffect(() => {
+    const seed = affirmationId 
+      ? affirmationId.split('').reduce((acc, c, idx) => acc + c.charCodeAt(0) * (idx + 1), 0) + (swipeTrigger * 13)
+      : (swipeTrigger * 17) + Math.random() * 50;
+
+    const pseudoRand = (offset) => {
+      const x = Math.sin(seed * 9.8 + offset * 13.7) * 10000;
+      return x - Math.floor(x);
+    };
+
+    targetMorph.current = {
+      fTheta: 1.6 + pseudoRand(1) * 4.2,      // number of lobes / folds (1.6 .. 5.8)
+      fPhi: 1.2 + pseudoRand(2) * 2.8,        // vertical undulation modes (1.2 .. 4.0)
+      stretchX: 0.72 + pseudoRand(3) * 0.58,  // width factor
+      stretchY: 0.75 + pseudoRand(4) * 0.55,  // height factor
+      stretchZ: 0.68 + pseudoRand(5) * 0.50,  // depth factor
+      turbAmp: 0.16 + pseudoRand(6) * 0.22,   // surface ripple roughness
+      coreComp: 0.80 + pseudoRand(7) * 0.42   // core nucleus compactness
+    };
+  }, [affirmationId, swipeTrigger]);
 
   // Update pulse trigger from props (e.g. on heart click)
   useEffect(() => {
@@ -224,6 +268,18 @@ export default function ThreeZenBackground({
       const pulseEnergy = pulseRef.current * 3.8;
       const swipeTwist = swipeAnimRef.current * 0.8;
 
+      // Smooth fluid lerp of morphing parameters (smooth ~1.5s morph to new shape)
+      const m = currentMorph.current;
+      const tm = targetMorph.current;
+      const lerp = 0.024;
+      m.fTheta += (tm.fTheta - m.fTheta) * lerp;
+      m.fPhi += (tm.fPhi - m.fPhi) * lerp;
+      m.stretchX += (tm.stretchX - m.stretchX) * lerp;
+      m.stretchY += (tm.stretchY - m.stretchY) * lerp;
+      m.stretchZ += (tm.stretchZ - m.stretchZ) * lerp;
+      m.turbAmp += (tm.turbAmp - m.turbAmp) * lerp;
+      m.coreComp += (tm.coreComp - m.coreComp) * lerp;
+
       // Pointer influence: fluid gentle gravity attractor
       const touchGravX = mouseRef.current.x * 1.2;
       const touchGravY = mouseRef.current.y * 1.2;
@@ -239,8 +295,6 @@ export default function ThreeZenBackground({
         let phi = seeds[i4 + 2];
         const speed = seeds[i4 + 3];
 
-        const fTheta = noiseAttrs[i4];
-        const fPhi = noiseAttrs[i4 + 1];
         const phase1 = noiseAttrs[i4 + 2];
         const phase2 = noiseAttrs[i4 + 3];
 
@@ -248,22 +302,22 @@ export default function ThreeZenBackground({
         theta += (speed * 0.0025) + (swipeTwist * 0.012);
         seeds[i4 + 1] = theta;
 
-        // Harmonic 3D turbulence waves: slow, liquid, hypnotic deformation
-        const wave1 = Math.sin(theta * fTheta + slowTime * 1.1 + phase1) * Math.cos(phi * fPhi + slowTime * 0.8);
-        const wave2 = Math.sin(phi * 3.0 - slowTime * 1.2 + phase2) * 0.22;
+        // Harmonic 3D turbulence waves: slow, liquid, morphing deformation
+        const wave1 = Math.sin(theta * m.fTheta + slowTime * 1.1 + phase1) * Math.cos(phi * m.fPhi + slowTime * 0.8);
+        const wave2 = Math.sin(phi * 3.0 - slowTime * 1.2 + phase2) * m.turbAmp;
         const wave3 = Math.cos(baseR * 0.4 + theta * 1.5 + slowTime * 0.6) * 0.18;
 
         // Dynamic morphed radius of the amorphous clump
-        const morphR = baseR * (1.0 + (wave1 * 0.28) + wave2 + wave3) + pulseEnergy * (0.8 + (i % 7) * 0.35);
+        const morphR = (baseR * m.coreComp) * (1.0 + (wave1 * 0.28) + wave2 + wave3) + pulseEnergy * (0.8 + (i % 7) * 0.35);
 
         // Gentle organic drift
         const curTheta = theta + Math.sin(slowTime * 0.6 + phase1) * 0.08;
         const curPhi = phi + Math.cos(slowTime * 0.7 + phase2) * 0.06;
 
         const cosPhi = Math.cos(curPhi);
-        const x = morphR * Math.cos(curTheta) * cosPhi + touchGravX;
-        const y = morphR * Math.sin(curTheta) * cosPhi + touchGravY;
-        const z = morphR * Math.sin(curPhi) * 0.88;
+        const x = (morphR * Math.cos(curTheta) * cosPhi) * m.stretchX + touchGravX;
+        const y = (morphR * Math.sin(curTheta) * cosPhi) * m.stretchY + touchGravY;
+        const z = (morphR * Math.sin(curPhi)) * m.stretchZ;
 
         posArray[i3] = x;
         posArray[i3 + 1] = y;
