@@ -544,7 +544,8 @@ export default function ThreeZenBackground({
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
 
-      const elapsedTime = clock.getElapsedTime();
+      // 2x slower global meditative speed
+      const elapsedTime = clock.getElapsedTime() * 0.5;
 
       // Smooth pointer damping
       mouseRef.current.x += (mouseRef.current.targetX - mouseRef.current.x) * 0.028;
@@ -579,7 +580,7 @@ export default function ThreeZenBackground({
 
         const m = currentMorph.current;
         const tm = targetMorph.current;
-        const lerp = 0.024;
+        const lerp = 0.012;
         m.fTheta += (tm.fTheta - m.fTheta) * lerp;
         m.fPhi += (tm.fPhi - m.fPhi) * lerp;
         m.stretchX += (tm.stretchX - m.stretchX) * lerp;
@@ -606,7 +607,7 @@ export default function ThreeZenBackground({
           const phase1 = clumpNoiseAttrs[i4 + 2];
           const phase2 = clumpNoiseAttrs[i4 + 3];
 
-          theta += (speed * 0.0025) + (swipeTwist * 0.012);
+          theta += (speed * 0.00125) + (swipeTwist * 0.012);
           clumpSeeds[i4 + 1] = theta;
 
           const wave1 = Math.sin(theta * m.fTheta + slowTime * 1.1 + phase1) * Math.cos(phi * m.fPhi + slowTime * 0.8);
