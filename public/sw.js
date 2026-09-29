@@ -1,64 +1,126 @@
-const CACHE_NAME = 'affirmations-pwa-v2';
-const ASSETS_TO_CACHE = [
+// CACHE_NAME is rewritten on every build by scripts/inject-build-id.js.
+// Do not commit a static name here — the placeholder below MUST remain so the
+// post-build step can substitute a fresh timestamp and force the browser to
+// detect a new service worker.
+const CACHE_NAME ='affirmations-pwa-__BUILD_ID__';
+const STATIC_CACHE_NAME = `${CACHE_NAME}-static`;
+
+const CORE_ASSETS = [
   '/affirmations/',
   '/affirmations/index.html',
   '/affirmations/manifest.json',
   '/affirmations/icons/icon.svg'
 ];
 
-// Install: Cache core assets
+// Install: cache core shell, take over immediately
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE).catch((err) => {
-        console.warn('Cache pre-fetch warning:', err);
-      });
-    })
+    caches.open(CACHE_NAME).then((cache) =>
+      cache.addAll(CORE_ASSETS).catch((err) => {
+        console.warn('[SW] Core asset pre-cache warning:', err);
+      })
+    ).then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// Activate: Clean old caches and take control
+// Activate: drop old caches, claim open clients so the new SW serves them right away
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
+    caches.keys().then((keys) =>
+      Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) {
+          if (key !== CACHE_NAME && key !== STATIC_CACHE_NAME) {
             return caches.delete(key);
           }
         })
-      );
-    }).then(() => self.clients.claim())
+      )
+    ).then(() => self.clients.claim())
   );
 });
 
-// Fetch: Network First with Cache Fallback for HTML/API, Cache First for Static
-self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
+// Listen for SKIP_WAITING requests from the page (used by the update toast)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
-  // Skip non-GET requests and API calls for caching
-  if (event.request.method !== 'GET' || url.pathname.includes('/api/')) {
+function isNavigationRequest(request) {
+  return (
+    request.mode === 'navigate' ||
+    (request.method === 'GET' && request.headers.get('accept') && request.headers.get('accept').includes('text/html'))
+  );
+}
+
+function isHashedAsset(url) {
+  // Hashed Vite assets are immutable — safe to cache forever
+  return /\/assets\/[^/]+\.[a-f0-9]{8}\.(js|css)$/i.test(url.pathname);
+}
+
+function isStaticAsset(url) {
+  return (
+    isHashedAsset(url) ||
+    url.pathname.startsWith('/affirmations/icons/') ||
+    url.pathname.startsWith('/affirmations/landscapes/')
+  );
+}
+
+// Fetch:
+//  - navigation/HTML: network-first, fallback to cached HTML, then to /
+//  - hashed/static assets: cache-first, refresh in background
+//  - everything else: passthrough
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+
+  const url = new URL(request.url);
+
+  // Skip cross-origin and API calls entirely
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.includes('/api/')) return;
+
+  if (isNavigationRequest(request)) {
+    event.respondWith(
+      fetch(request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(async () => {
+          const cached = await caches.match(request);
+          if (cached) return cached;
+          const fallback = await caches.match('/affirmations/index.html');
+          if (fallback) return fallback;
+          return new Response('Offline', { status: 503, statusText: 'Offline' });
+        })
+    );
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      const fetchPromise = fetch(event.request).then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      }).catch(() => {
-        // Offline fallback
-        return cachedResponse;
-      });
+  if (isStaticAsset(url)) {
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        const networkFetch = fetch(request)
+          .then((networkResponse) => {
+            if (networkResponse && networkResponse.status === 200) {
+              const clone = networkResponse.clone();
+              caches.open(STATIC_CACHE_NAME).then((cache) => cache.put(request, clone));
+            }
+            return networkResponse;
+          })
+          .catch(() => cached);
+        return cached || networkFetch;
+      })
+    );
+    return;
+  }
 
-      return cachedResponse || fetchPromise;
-    })
+  // Default: try network, fall back to cache if any
+  event.respondWith(
+    fetch(request).catch(() => caches.match(request))
   );
 });
 
@@ -113,7 +175,6 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // If a window is already open, focus it and navigate
       for (const client of clientList) {
         if ('focus' in client) {
           client.focus();
@@ -124,7 +185,6 @@ self.addEventListener('notificationclick', (event) => {
           return client.navigate(targetUrl);
         }
       }
-      // Otherwise open a new window
       if (self.clients.openWindow) {
         return self.clients.openWindow(targetUrl);
       }

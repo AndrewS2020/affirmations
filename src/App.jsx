@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Sparkles, 
-  Library, 
-  Bell, 
-  Wind, 
-  Plus, 
+import {
+  Sparkles,
+  Library,
+  Bell,
+  Wind,
+  Plus,
   Heart,
   Smartphone,
   Sun,
-  Moon
+  Moon,
+  RefreshCw
 } from 'lucide-react';
 import ZenView from './components/ZenView';
 import AffirmationsList from './components/AffirmationsList';
@@ -147,6 +148,8 @@ export default function App() {
     const saved = localStorage.getItem('affirmations_theme');
     return saved !== null ? saved === 'dark' : false;
   });
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [waitingWorker, setWaitingWorker] = useState(null);
 
   // Sync theme with HTML class
   useEffect(() => {
@@ -170,17 +173,74 @@ export default function App() {
 
   // Load affirmations and register service worker on start
   useEffect(() => {
-    registerServiceWorker();
     fetchAffirmations();
 
-    // Listen for Service Worker notification click messages
+    // Service Worker registration with update detection
+    let refreshTimer = null;
+    let registrationRef = null;
+    let refreshing = false;
+
+    const handleUpdate = (worker) => {
+      setWaitingWorker(worker);
+      setUpdateAvailable(true);
+    };
+
+    const attachUpdateListeners = (reg) => {
+      if (!reg) return;
+      if (reg.waiting) {
+        handleUpdate(reg.waiting);
+      }
+      reg.addEventListener('updatefound', () => {
+        const newSw = reg.installing;
+        if (!newSw) return;
+        newSw.addEventListener('statechange', () => {
+          if (newSw.state === 'installed' && navigator.serviceWorker.controller) {
+            handleUpdate(newSw);
+          }
+        });
+      });
+    };
+
+    const initServiceWorker = async () => {
+      try {
+        const reg = await registerServiceWorker();
+        if (!reg) return;
+        registrationRef = reg;
+        attachUpdateListeners(reg);
+
+        // Periodically check for SW updates (every 30 min)
+        refreshTimer = setInterval(() => {
+          if (registrationRef) registrationRef.update().catch(() => {});
+        }, 30 * 60 * 1000);
+
+        // Also re-check on visibility change (when user returns to the app)
+        const onVisibility = () => {
+          if (document.visibilityState === 'visible' && registrationRef) {
+            registrationRef.update().catch(() => {});
+          }
+        };
+        document.addEventListener('visibilitychange', onVisibility);
+      } catch (e) {
+        console.warn('[App] SW init error:', e);
+      }
+    };
+
+    // When the new SW takes over (after SKIP_WAITING), reload to load fresh bundle
     if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (refreshing) return;
+        refreshing = true;
+        window.location.reload();
+      });
+
       navigator.serviceWorker.addEventListener('message', (event) => {
         if (event.data && event.data.type === 'NOTIFICATION_OPENED' && event.data.affirmationId) {
           handleSelectAffirmationById(event.data.affirmationId);
         }
       });
     }
+
+    initServiceWorker();
 
     // Check URL parameters for shortcut routing
     const params = new URLSearchParams(window.location.search);
@@ -192,6 +252,10 @@ export default function App() {
     if (affIdParam) {
       handleSelectAffirmationById(affIdParam);
     }
+
+    return () => {
+      if (refreshTimer) clearInterval(refreshTimer);
+    };
   }, []);
 
   const fetchAffirmations = async () => {
@@ -314,6 +378,14 @@ export default function App() {
       setCurrentIndex(idx);
       setActiveTab('zen');
     }
+  };
+
+  // Apply pending service worker update: tell the waiting worker to activate,
+  // then reload once controllerchange fires (see useEffect above).
+  const applyServiceWorkerUpdate = () => {
+    if (!waitingWorker) return;
+    audioManager.triggerHaptic([20]);
+    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
   };
 
   return (
@@ -496,6 +568,31 @@ export default function App() {
           </button>
         </div>
       </nav>
+
+      {/* Update Available Toast — shown when a new SW has finished installing */}
+      {updateAvailable && (
+        <div className="fixed left-1/2 -translate-x-1/2 z-50 pointer-events-none" style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 90px)' }}>
+          <div className="pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl bg-zinc-900/95 dark:bg-zinc-100/95 text-white dark:text-zinc-900 shadow-xl shadow-black/20 backdrop-blur-xl max-w-sm">
+            <RefreshCw className="w-4 h-4 shrink-0" />
+            <div className="flex-1 text-xs font-medium leading-tight">
+              Доступна новая версия
+            </div>
+            <button
+              onClick={applyServiceWorkerUpdate}
+              className="px-3 py-1.5 rounded-full bg-[#7C6CF0] hover:bg-[#6A5BF5] active:scale-95 text-white text-xs font-semibold transition-all"
+            >
+              Обновить
+            </button>
+            <button
+              onClick={() => setUpdateAvailable(false)}
+              className="px-2 py-1.5 rounded-full text-white/70 dark:text-zinc-700/70 hover:text-white dark:hover:text-zinc-900 text-xs transition-all"
+              aria-label="Закрыть"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
