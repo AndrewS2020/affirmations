@@ -942,8 +942,8 @@ export default function ThreeZenBackground({
       disposables.push(cloakGeo);
 
       const headGeo = new THREE.SphereGeometry(0.20, 6, 6);
-      headGeo.position.set(0, 1.35, 0.05);
       const headMesh = new THREE.Mesh(headGeo, silhouetteMat);
+      headMesh.position.set(0, 1.35, 0.05);
       wandererGroup.add(headMesh);
       disposables.push(headGeo);
 
