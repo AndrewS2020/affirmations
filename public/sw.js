@@ -54,9 +54,9 @@ function isNavigationRequest(request) {
 
 function isHashedAsset(url) {
   // Vite emits content-hashed filenames like index-BhBD9SpY.js — these are
-  // immutable by design, so cache-first is safe. Allow any alphanumeric hash,
-  // not just [a-f0-9], since Vite's default uses base64-ish characters.
-  return /\/assets\/[^/]+\.[A-Za-z0-9_-]{6,}\.(js|css)(\?.*)?$/i.test(url.pathname);
+  // immutable by design, so cache-first is safe. The hash uses base64-ish
+  // characters ([A-Za-z0-9_-]), not strictly hex, so allow the full alphabet.
+  return /\/assets\/[^/]+-[A-Za-z0-9_-]{6,}\.(js|css)(\?.*)?$/i.test(url.pathname);
 }
 
 function isStaticAsset(url) {
