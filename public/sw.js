@@ -53,8 +53,10 @@ function isNavigationRequest(request) {
 }
 
 function isHashedAsset(url) {
-  // Hashed Vite assets are immutable — safe to cache forever
-  return /\/assets\/[^/]+\.[a-f0-9]{8}\.(js|css)$/i.test(url.pathname);
+  // Vite emits content-hashed filenames like index-BhBD9SpY.js — these are
+  // immutable by design, so cache-first is safe. Allow any alphanumeric hash,
+  // not just [a-f0-9], since Vite's default uses base64-ish characters.
+  return /\/assets\/[^/]+\.[A-Za-z0-9_-]{6,}\.(js|css)(\?.*)?$/i.test(url.pathname);
 }
 
 function isStaticAsset(url) {
@@ -68,14 +70,14 @@ function isStaticAsset(url) {
 // Fetch:
 //  - navigation/HTML: network-first, fallback to cached HTML, then to /
 //  - hashed/static assets: cache-first, refresh in background
-//  - everything else: passthrough
+//  - everything else: passthrough (no respondWith)
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
 
   const url = new URL(request.url);
 
-  // Skip cross-origin and API calls entirely
+  // Skip cross-origin and API calls entirely — let the browser handle them
   if (url.origin !== self.location.origin) return;
   if (url.pathname.includes('/api/')) return;
 
@@ -118,10 +120,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Default: try network, fall back to cache if any
-  event.respondWith(
-    fetch(request).catch(() => caches.match(request))
-  );
+  // For anything else (fonts.googleapis.com, etc.) — don't intervene.
+  // The browser will handle it normally.
 });
 
 // Push Notifications Event
