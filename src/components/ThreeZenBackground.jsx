@@ -546,299 +546,128 @@ export default function ThreeZenBackground({
     }
 
     // =========================================================================
-    // SYSTEM 4: "ИНОПЛАНЕТНЫЙ КАНЬОН" (Natural Alien Solid Landscape Mode)
+    // SYSTEM 4: "ИНОПЛАНЕТНЫЙ КАНЬОН" (2.5D Cinematic Parallax Landscape)
     // =========================================================================
     let landscapeGroup = null;
+    let landscapePlaneMesh = null;
+    let landscapeShaderMat = null;
     let landscapeMistPlanes = [];
-    let sunLight = null;
+    let landscapeDustPoints = null;
 
     if (visualMode === 'landscape') {
       landscapeGroup = new THREE.Group();
       scene.add(landscapeGroup);
       disposables.push(landscapeGroup);
 
-      // Disable point light in landscape mode to keep dramatic sunlight shadows
+      // Disable central point light in landscape mode to keep painterly lighting intact
       coreLight.intensity = 0;
 
-      // 1. Atmosphere & Scene Fog
-      const fogColor = new THREE.Color(isDarkMode ? 0x222a34 : 0x9c8e82);
-      scene.fog = new THREE.FogExp2(fogColor, 0.016);
+      // Ensure camera is positioned for 2.5D depth parallax
+      camera.position.set(0, 0, 10);
+      camera.lookAt(0, 0, 0);
 
-      // 2. Lighting: Directional Sunset Sun + Cool Hemisphere Sky Ambient
-      const hemiLight = new THREE.HemisphereLight(
-        isDarkMode ? 0x3d4e60 : 0x6d859d, // Sky cool slate
-        isDarkMode ? 0x261d17 : 0x5a4635, // Ground warm earth
-        isDarkMode ? 1.3 : 1.9
-      );
-      scene.add(hemiLight);
-      disposables.push(hemiLight);
+      // Load high-resolution artwork and custom depth map
+      const textureLoader = new THREE.TextureLoader();
+      const baseUrl = import.meta.env.BASE_URL || '/affirmations/';
+      const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl : baseUrl + '/';
 
-      sunLight = new THREE.DirectionalLight(
-        isDarkMode ? 0xffc48c : 0xffdeb6, 
-        isDarkMode ? 2.4 : 3.2
-      );
-      sunLight.position.set(-25, 18, -65);
-      sunLight.target.position.set(0, -2, -25);
-      scene.add(sunLight);
-      scene.add(sunLight.target);
-      disposables.push(sunLight);
+      const colorTexture = textureLoader.load(`${cleanBaseUrl}landscapes/alien_canyon.jpg`);
+      const depthTexture = textureLoader.load(`${cleanBaseUrl}landscapes/alien_canyon_depth.jpg`);
 
-      // Adjust camera for landscape overlook vantage point
-      camera.position.set(0, 1.4, 9.0);
+      colorTexture.generateMipmaps = true;
+      colorTexture.minFilter = THREE.LinearMipmapLinearFilter;
+      depthTexture.generateMipmaps = true;
+      depthTexture.minFilter = THREE.LinearMipmapLinearFilter;
 
-      // -----------------------------------------------------------------------
-      // A. Moody Skydome (Storm clouds overhead down to warm horizon glow)
-      // -----------------------------------------------------------------------
-      const skyGeo = new THREE.SphereGeometry(125, 32, 20, 0, Math.PI * 2, 0, Math.PI * 0.65);
-      skyGeo.scale(-1, 1, 1);
+      disposables.push(colorTexture, depthTexture);
 
-      const skyColors = [];
-      const skyPos = skyGeo.attributes.position;
-      const topCol = new THREE.Color(isDarkMode ? 0x161c24 : 0x2e3b48);
-      const midCol = new THREE.Color(isDarkMode ? 0x2c3947 : 0x4f6274);
-      const horizonCol = new THREE.Color(isDarkMode ? 0x5c4234 : 0xdfa075);
-      const hazeCol = new THREE.Color(isDarkMode ? 0x25201c : 0xa68c78);
+      // Calculate plane size to cover the entire screen + 15% overscan margin for parallax
+      const vHeight = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 10;
+      const vWidth = vHeight * (width / height);
+      const imgAspect = 571 / 1024;
+      const screenAspect = vWidth / vHeight;
 
-      for (let i = 0; i < skyPos.count; i++) {
-        const y = skyPos.getY(i);
-        const normY = THREE.MathUtils.clamp(y / 110, 0, 1);
-        let col = new THREE.Color();
-        if (normY > 0.45) {
-          col.lerpColors(midCol, topCol, (normY - 0.45) / 0.55);
-        } else if (normY > 0.12) {
-          col.lerpColors(horizonCol, midCol, (normY - 0.12) / 0.33);
-        } else {
-          col.lerpColors(hazeCol, horizonCol, normY / 0.12);
-        }
-        skyColors.push(col.r, col.g, col.b);
+      let planeW, planeH;
+      if (screenAspect > imgAspect) {
+        planeW = vWidth * 1.15;
+        planeH = planeW / imgAspect;
+      } else {
+        planeH = vHeight * 1.15;
+        planeW = planeH * imgAspect;
       }
-      skyGeo.setAttribute('color', new THREE.Float32BufferAttribute(skyColors, 3));
 
-      const skyMat = new THREE.MeshBasicMaterial({
-        vertexColors: true,
-        side: THREE.BackSide,
+      const planeGeo = new THREE.PlaneGeometry(1, 1, 32, 32);
+      disposables.push(planeGeo);
+
+      landscapeShaderMat = new THREE.ShaderMaterial({
+        uniforms: {
+          uMap: { value: colorTexture },
+          uDepthMap: { value: depthTexture },
+          uMouse: { value: new THREE.Vector2(0, 0) },
+          uPulse: { value: 0.0 },
+          uTime: { value: 0.0 }
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D uMap;
+          uniform sampler2D uDepthMap;
+          uniform vec2 uMouse;
+          uniform float uPulse;
+          uniform float uTime;
+          varying vec2 vUv;
+
+          void main() {
+            // Read depth value (0.0 = distant sky, 1.0 = near foreground cliff)
+            float depth = texture2D(uDepthMap, vUv).r;
+
+            // Parallax vector: foreground moves significantly, background stays stable
+            vec2 offset = uMouse * (depth - 0.44) * 0.045;
+
+            // Subtle organic air shimmer in distant mist
+            float mistShimmer = sin(uTime * 0.9 + vUv.y * 14.0) * (1.0 - depth) * 0.002;
+            offset.x += mistShimmer;
+
+            vec2 displacedUv = clamp(vUv + offset, 0.002, 0.998);
+            vec4 col = texture2D(uMap, displacedUv);
+
+            // Radiant golden sunburst flare on favorite / like pulse
+            if (uPulse > 0.001) {
+              vec3 sunGlow = vec3(1.20, 0.98, 0.78) * uPulse * 0.38;
+              col.rgb += sunGlow * (1.15 - depth * 0.45);
+            }
+
+            gl_FragColor = col;
+          }
+        `,
         depthWrite: false
       });
-      const skyMesh = new THREE.Mesh(skyGeo, skyMat);
-      skyMesh.rotation.y = 0.4;
-      landscapeGroup.add(skyMesh);
-      disposables.push(skyGeo, skyMat);
+      disposables.push(landscapeShaderMat);
+
+      landscapePlaneMesh = new THREE.Mesh(planeGeo, landscapeShaderMat);
+      landscapePlaneMesh.scale.set(planeW, planeH, 1);
+      landscapePlaneMesh.position.set(0, 0, 0);
+      landscapeGroup.add(landscapePlaneMesh);
 
       // -----------------------------------------------------------------------
-      // B. Distant Mountain Ridge (Jagged needles & massive mountain wall)
-      // -----------------------------------------------------------------------
-      const mountainGeo = new THREE.PlaneGeometry(175, 42, 110, 24);
-      mountainGeo.translate(0, 15, -72);
-
-      const mPos = mountainGeo.attributes.position;
-      const mColors = [];
-      const peakSunCol = new THREE.Color(isDarkMode ? 0xa87754 : 0xebaf84);
-      const mShadowCol = new THREE.Color(isDarkMode ? 0x27313c : 0x475565);
-      const mBaseCol = new THREE.Color(isDarkMode ? 0x202730 : 0x8a7b6f);
-
-      for (let i = 0; i < mPos.count; i++) {
-        const x = mPos.getX(i);
-        const y = mPos.getY(i);
-        const normX = x * 0.038;
-
-        // Jagged mountain peaks with sharp needles
-        const n1 = Math.pow(fbm2D(normX, 0.4, 4), 1.9) * 24.0;
-        const n2 = Math.sin(normX * 3.4) * 4.2;
-        const isSpire = Math.exp(-Math.pow((x - 22) * 0.22, 2)) * 14.0 + Math.exp(-Math.pow((x + 36) * 0.25, 2)) * 11.0;
-
-        const ridgeHeight = n1 + n2 + isSpire;
-        const vertFactor = THREE.MathUtils.clamp((y - 2) / 36, 0, 1);
-        mPos.setY(i, (y * (0.35 + vertFactor * 0.65)) + (ridgeHeight * vertFactor));
-        mPos.setZ(i, mPos.getZ(i) + (fbm2D(normX * 1.5, y * 0.1, 2) * 5.0 * vertFactor));
-
-        const finalY = mPos.getY(i);
-        let col = new THREE.Color();
-        if (finalY > 20) {
-          col.lerpColors(mShadowCol, peakSunCol, THREE.MathUtils.clamp((finalY - 20) / 12, 0, 1));
-        } else {
-          col.lerpColors(mBaseCol, mShadowCol, THREE.MathUtils.clamp(finalY / 20, 0, 1));
-        }
-        mColors.push(col.r, col.g, col.b);
-      }
-      mountainGeo.setAttribute('color', new THREE.Float32BufferAttribute(mColors, 3));
-      mountainGeo.computeVertexNormals();
-
-      const mountainMat = new THREE.MeshStandardMaterial({
-        vertexColors: true,
-        roughness: 0.95,
-        metalness: 0.05,
-        flatShading: true
-      });
-      const mountainMesh = new THREE.Mesh(mountainGeo, mountainMat);
-      landscapeGroup.add(mountainMesh);
-      disposables.push(mountainGeo, mountainMat);
-
-      // -----------------------------------------------------------------------
-      // C. Canyon Valley Floor (Terraces, sediment trails & mesa steps)
-      // -----------------------------------------------------------------------
-      const canyonGeo = new THREE.PlaneGeometry(130, 85, 90, 60);
-      canyonGeo.rotateX(-Math.PI / 2);
-      canyonGeo.translate(0, -6.2, -36);
-
-      const cPos = canyonGeo.attributes.position;
-      const cColors = [];
-
-      const floorCol = new THREE.Color(isDarkMode ? 0x483a2d : 0x8f755a);
-      const cliffCol = new THREE.Color(isDarkMode ? 0x2e241c : 0x544335);
-      const roadCol = new THREE.Color(isDarkMode ? 0x6e5845 : 0xc7af93);
-      const shadowClayCol = new THREE.Color(isDarkMode ? 0x221a14 : 0x453529);
-
-      for (let i = 0; i < cPos.count; i++) {
-        const x = cPos.getX(i);
-        const z = cPos.getZ(i);
-
-        // Canyon winding canyon center: S-curve through the valley
-        const canyonCenter = Math.sin((z + 36) * 0.07) * 7.5;
-        const distFromCenter = Math.abs(x - canyonCenter);
-
-        // Mesa stepped terraces
-        const terrNoise = fbm2D(x * 0.07, z * 0.07, 4);
-        const steppedTerrace = (Math.floor(terrNoise * 5) / 5) * 6.5;
-
-        // Depth trough in middle, rising walls on left and right
-        const wallRise = Math.pow(THREE.MathUtils.clamp(distFromCenter / 24, 0, 1), 1.6) * 12.0;
-        const microNoise = (fbm2D(x * 0.22, z * 0.22, 3) - 0.5) * 1.8;
-
-        const y = -6.2 + wallRise + steppedTerrace + microNoise - 3.5;
-        cPos.setY(i, y);
-
-        // Winding trails / dust roads
-        const roadWander = Math.sin((z + 30) * 0.12) * 3.5;
-        const isRoad = Math.abs(x - canyonCenter - roadWander) < 1.4;
-
-        let col = new THREE.Color();
-        if (isRoad && y < -2) {
-          col.copy(roadCol);
-        } else if (distFromCenter > 16) {
-          col.copy(cliffCol);
-        } else if (y < -5.5) {
-          col.copy(shadowClayCol);
-        } else {
-          col.copy(floorCol);
-        }
-        cColors.push(col.r, col.g, col.b);
-      }
-      canyonGeo.setAttribute('color', new THREE.Float32BufferAttribute(cColors, 3));
-      canyonGeo.computeVertexNormals();
-
-      const canyonMat = new THREE.MeshStandardMaterial({
-        vertexColors: true,
-        roughness: 0.92,
-        metalness: 0.06,
-        flatShading: true
-      });
-      const canyonMesh = new THREE.Mesh(canyonGeo, canyonMat);
-      landscapeGroup.add(canyonMesh);
-      disposables.push(canyonGeo, canyonMat);
-
-      // -----------------------------------------------------------------------
-      // D. Right Cathedral Monolith Spires (Iconic Gothic natural rock tower)
-      // -----------------------------------------------------------------------
-      const spireGroup = new THREE.Group();
-      spireGroup.position.set(16.5, -6.5, -34);
-
-      const spireRockMat = new THREE.MeshStandardMaterial({
-        color: isDarkMode ? 0x3d3126 : 0x6e5642,
-        roughness: 0.88,
-        metalness: 0.08,
-        flatShading: true
-      });
-      disposables.push(spireRockMat);
-
-      const spireData = [
-        { x: 0, z: 0, rBase: 2.4, rTop: 0.5, h: 22 },
-        { x: 1.8, z: 1.2, rBase: 1.6, rTop: 0.2, h: 18 },
-        { x: -1.5, z: 0.8, rBase: 1.9, rTop: 0.3, h: 16 },
-        { x: 0.8, z: -1.6, rBase: 1.4, rTop: 0.1, h: 14 },
-        { x: -1.2, z: -1.1, rBase: 1.2, rTop: 0.2, h: 11 },
-        { x: 2.6, z: -0.6, rBase: 1.0, rTop: 0.1, h: 9 }
-      ];
-
-      spireData.forEach(sd => {
-        const pillarGeo = new THREE.CylinderGeometry(sd.rTop, sd.rBase, sd.h, 7, 10);
-        pillarGeo.translate(0, sd.h / 2, 0);
-
-        const pPos = pillarGeo.attributes.position;
-        for (let j = 0; j < pPos.count; j++) {
-          const vy = pPos.getY(j);
-          const noise = fbm2D(pPos.getX(j) * 0.8, vy * 0.4, 2) * 0.45;
-          const notch = Math.sin(vy * 1.5) * 0.2;
-          pPos.setX(j, pPos.getX(j) * (1.0 + noise + notch));
-          pPos.setZ(j, pPos.getZ(j) * (1.0 + noise + notch));
-        }
-        pillarGeo.computeVertexNormals();
-
-        const pillarMesh = new THREE.Mesh(pillarGeo, spireRockMat);
-        pillarMesh.position.set(sd.x, 0, sd.z);
-        spireGroup.add(pillarMesh);
-        disposables.push(pillarGeo);
-      });
-      landscapeGroup.add(spireGroup);
-
-      // -----------------------------------------------------------------------
-      // E. Left Ruin Monolith & Ancient Archway (Ruined Citadel)
-      // -----------------------------------------------------------------------
-      const ruinGroup = new THREE.Group();
-      ruinGroup.position.set(-15, -6.5, -26);
-
-      const ruinMat = new THREE.MeshStandardMaterial({
-        color: isDarkMode ? 0x362b21 : 0x5d4a39,
-        roughness: 0.94,
-        metalness: 0.05,
-        flatShading: true
-      });
-      disposables.push(ruinMat);
-
-      const ruinBlocks = [
-        { x: 0, z: 0, w: 3.5, h: 12, d: 3.0 },
-        { x: 3.0, z: 1.0, w: 2.6, h: 9.0, d: 2.2 },
-        { x: -2.8, z: 0.5, w: 2.2, h: 8.5, d: 2.5 },
-        { x: 5.2, z: 1.8, w: 2.0, h: 6.0, d: 2.0 },
-        { x: -5.0, z: 1.2, w: 1.8, h: 5.5, d: 1.8 },
-        { x: 1.5, z: 0.5, w: 3.8, h: 1.4, d: 1.8, y: 7.2 }
-      ];
-
-      ruinBlocks.forEach(rb => {
-        const boxGeo = new THREE.BoxGeometry(rb.w, rb.h, rb.d, 3, 5, 3);
-        boxGeo.translate(0, (rb.y ?? (rb.h / 2)), 0);
-
-        const bPos = boxGeo.attributes.position;
-        for (let j = 0; j < bPos.count; j++) {
-          const rough = (fbm2D(bPos.getX(j) * 0.9, bPos.getY(j) * 0.7, 2) - 0.5) * 0.45;
-          bPos.setX(j, bPos.getX(j) + rough);
-          bPos.setZ(j, bPos.getZ(j) + rough);
-        }
-        boxGeo.computeVertexNormals();
-
-        const boxMesh = new THREE.Mesh(boxGeo, ruinMat);
-        boxMesh.position.set(rb.x, 0, rb.z);
-        ruinGroup.add(boxMesh);
-        disposables.push(boxGeo);
-      });
-      landscapeGroup.add(ruinGroup);
-
-      // -----------------------------------------------------------------------
-      // F. Drifting Canyon Mist Planes (Atmospheric Depth)
+      // 3D Drifting Volumetric Canyon Mist Layers
       // -----------------------------------------------------------------------
       const mistTexture = createMistTexture();
       disposables.push(mistTexture);
 
       const mistPlanesData = [
-        { x: 0, y: -2.8, z: -22, w: 75, d: 30, speed: 0.18, opacity: isDarkMode ? 0.32 : 0.45 },
-        { x: 6, y: -2.0, z: -35, w: 90, d: 35, speed: -0.14, opacity: isDarkMode ? 0.38 : 0.55 },
-        { x: -8, y: -1.2, z: -48, w: 110, d: 40, speed: 0.12, opacity: isDarkMode ? 0.42 : 0.60 },
-        { x: 2, y: 1.0, z: -60, w: 130, d: 45, speed: -0.09, opacity: isDarkMode ? 0.48 : 0.65 }
+        { x: -1.2, y: -0.8, z: 1.2, w: 9.5, h: 3.5, speed: 0.16, opacity: isDarkMode ? 0.35 : 0.48 },
+        { x: 1.5, y: -0.2, z: 2.2, w: 11.0, h: 4.0, speed: -0.12, opacity: isDarkMode ? 0.42 : 0.58 },
+        { x: -0.5, y: 0.6, z: 0.6, w: 12.5, h: 4.5, speed: 0.10, opacity: isDarkMode ? 0.28 : 0.38 }
       ];
 
       mistPlanesData.forEach((mpd) => {
-        const mGeo = new THREE.PlaneGeometry(mpd.w, mpd.d);
-        mGeo.rotateX(-Math.PI / 2);
-
+        const mGeo = new THREE.PlaneGeometry(mpd.w, mpd.h);
         const mMat = new THREE.MeshBasicMaterial({
           map: mistTexture,
           transparent: true,
@@ -855,107 +684,48 @@ export default function ThreeZenBackground({
         landscapeMistPlanes.push({
           mesh: mMesh,
           baseX: mpd.x,
-          speed: mpd.speed,
           baseY: mpd.y,
+          speed: mpd.speed,
           opacity: mpd.opacity
         });
       });
 
       // -----------------------------------------------------------------------
-      // G. Foreground Precipice & Craggy Cliff Ledge
+      // Floating Sunlit Golden Dust Motes / Starlight Embers
       // -----------------------------------------------------------------------
-      const cliffGeo = new THREE.PlaneGeometry(16, 12, 28, 22);
-      cliffGeo.rotateX(-Math.PI * 0.44);
-      cliffGeo.translate(0, -1.2, 2.0);
+      const dustCount = 45;
+      const dustPositions = new Float32Array(dustCount * 3);
+      const dustColors = new Float32Array(dustCount * 3);
 
-      const clPos = cliffGeo.attributes.position;
-      const clColors = [];
-      const rockHighCol = new THREE.Color(isDarkMode ? 0x5a483a : 0x8a705a);
-      const rockShadowCol = new THREE.Color(isDarkMode ? 0x221a14 : 0x3d3025);
+      const emberColor = new THREE.Color(isDarkMode ? 0xfcd34d : 0xfef08a);
 
-      for (let i = 0; i < clPos.count; i++) {
-        const x = clPos.getX(i);
-        const z = clPos.getZ(i);
+      for (let i = 0; i < dustCount; i++) {
+        dustPositions[i * 3] = (Math.random() - 0.5) * 8.0;
+        dustPositions[i * 3 + 1] = (Math.random() - 0.5) * 8.0;
+        dustPositions[i * 3 + 2] = 2.0 + Math.random() * 5.0; // In front of the 2.5D plane
 
-        const promontory = Math.exp(-Math.pow(x * 0.5, 2)) * Math.exp(-Math.pow((z + 1.2) * 0.6, 2)) * 1.6;
-        const cragNoise = (fbm2D(x * 0.8, z * 0.8, 3) - 0.5) * 1.1;
-        const dropoff = z < -1.5 ? Math.pow(Math.abs(z + 1.5) * 1.2, 1.8) * -2.4 : 0;
-
-        clPos.setY(i, clPos.getY(i) + promontory + cragNoise + dropoff);
-
-        const col = new THREE.Color();
-        col.lerpColors(rockShadowCol, rockHighCol, THREE.MathUtils.clamp((clPos.getY(i) + 1.5) / 1.8, 0, 1));
-        clColors.push(col.r, col.g, col.b);
+        dustColors[i * 3] = emberColor.r;
+        dustColors[i * 3 + 1] = emberColor.g;
+        dustColors[i * 3 + 2] = emberColor.b;
       }
-      cliffGeo.setAttribute('color', new THREE.Float32BufferAttribute(clColors, 3));
-      cliffGeo.computeVertexNormals();
 
-      const cliffMat = new THREE.MeshStandardMaterial({
+      const dustGeo = new THREE.BufferGeometry();
+      dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
+      dustGeo.setAttribute('color', new THREE.BufferAttribute(dustColors, 3));
+
+      const dustMat = new THREE.PointsMaterial({
+        size: 0.16,
         vertexColors: true,
-        roughness: 0.90,
-        metalness: 0.08,
-        flatShading: true
-      });
-      const cliffMesh = new THREE.Mesh(cliffGeo, cliffMat);
-      landscapeGroup.add(cliffMesh);
-      disposables.push(cliffGeo, cliffMat);
-
-      // Low-poly desert succulents nestled on cliff edges
-      const succulentMat = new THREE.MeshStandardMaterial({
-        color: isDarkMode ? 0x3b4c3e : 0x566d5b,
-        roughness: 0.85,
-        flatShading: true
-      });
-      disposables.push(succulentMat);
-
-      const plantCoords = [
-        { x: -2.8, y: -0.65, z: -0.4, scale: 0.35 },
-        { x: 3.2, y: -0.75, z: -0.2, scale: 0.42 },
-        { x: -1.6, y: -0.9, z: 0.8, scale: 0.28 },
-        { x: 2.2, y: -0.85, z: 1.0, scale: 0.32 }
-      ];
-
-      plantCoords.forEach(pc => {
-        const plantGeo = new THREE.ConeGeometry(pc.scale * 1.2, pc.scale * 1.5, 5);
-        plantGeo.rotateX(-0.3);
-        const plantMesh = new THREE.Mesh(plantGeo, succulentMat);
-        plantMesh.position.set(pc.x, pc.y, pc.z);
-        landscapeGroup.add(plantMesh);
-        disposables.push(plantGeo);
+        map: particleTexture,
+        transparent: true,
+        opacity: isDarkMode ? 0.75 : 0.60,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
       });
 
-      // -----------------------------------------------------------------------
-      // H. The Lone Wanderer Silhouette (Cloaked traveler overlooking the abyss)
-      // -----------------------------------------------------------------------
-      const wandererGroup = new THREE.Group();
-      wandererGroup.position.set(0, -0.25, -1.35);
-
-      const silhouetteMat = new THREE.MeshBasicMaterial({
-        color: 0x14110f
-      });
-      disposables.push(silhouetteMat);
-
-      const cloakGeo = new THREE.ConeGeometry(0.38, 1.25, 6);
-      cloakGeo.translate(0, 0.62, 0);
-      const cloakMesh = new THREE.Mesh(cloakGeo, silhouetteMat);
-      wandererGroup.add(cloakMesh);
-      disposables.push(cloakGeo);
-
-      const headGeo = new THREE.SphereGeometry(0.20, 6, 6);
-      const headMesh = new THREE.Mesh(headGeo, silhouetteMat);
-      headMesh.position.set(0, 1.35, 0.05);
-      wandererGroup.add(headMesh);
-      disposables.push(headGeo);
-
-      const legGeo = new THREE.CylinderGeometry(0.08, 0.09, 0.45, 5);
-      const legLeft = new THREE.Mesh(legGeo, silhouetteMat);
-      legLeft.position.set(-0.13, 0.15, 0);
-      const legRight = new THREE.Mesh(legGeo, silhouetteMat);
-      legRight.position.set(0.13, 0.15, 0);
-      wandererGroup.add(legLeft, legRight);
-      disposables.push(legGeo);
-
-      landscapeGroup.add(wandererGroup);
+      landscapeDustPoints = new THREE.Points(dustGeo, dustMat);
+      landscapeGroup.add(landscapeDustPoints);
+      disposables.push(dustGeo, dustMat);
     }
 
     // =========================================================================
@@ -978,6 +748,22 @@ export default function ThreeZenBackground({
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       rendererRef.current.setSize(w, h);
+
+      if (landscapePlaneMesh) {
+        const vH = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 10;
+        const vW = vH * (w / h);
+        const imgAsp = 571 / 1024;
+        const screenAsp = vW / vH;
+        let pW, pH;
+        if (screenAsp > imgAsp) {
+          pW = vW * 1.15;
+          pH = pW / imgAsp;
+        } else {
+          pH = vH * 1.15;
+          pW = pH * imgAsp;
+        }
+        landscapePlaneMesh.scale.set(pW, pH, 1);
+      }
     };
     window.addEventListener('resize', handleResize);
 
@@ -1288,37 +1074,39 @@ export default function ThreeZenBackground({
       }
 
       // -----------------------------------------------------------------------
-      // ANIMATION: LANDSCAPE MODE (Alien Canyon Overlook)
+      // ANIMATION: LANDSCAPE MODE (2.5D Cinematic Parallax Overlook)
       // -----------------------------------------------------------------------
-      if (visualMode === 'landscape' && landscapeGroup) {
-        // Subtle meditative breeze drone sway
-        const droneX = Math.sin(elapsedTime * 0.42) * 0.24;
-        const droneY = Math.cos(elapsedTime * 0.32) * 0.12;
+      if (visualMode === 'landscape' && landscapeGroup && landscapeShaderMat) {
+        // Subtle breathing drone sway
+        const swayX = Math.sin(elapsedTime * 0.4) * 0.18;
+        const swayY = Math.cos(elapsedTime * 0.32) * 0.10;
 
-        // Cinematic 3D Parallax from mouse/touch
-        const targetCamX = (mouseRef.current.x * 2.4) + droneX;
-        const targetCamY = 1.35 + (mouseRef.current.y * 1.3) + droneY;
-        camera.position.x += (targetCamX - camera.position.x) * 0.04;
-        camera.position.y += (targetCamY - camera.position.y) * 0.04;
-        camera.position.z = 9.0;
+        // Smooth mouse / touch damping with gentle parallax
+        const targetX = (mouseRef.current.x * 0.95) + swayX;
+        const targetY = (mouseRef.current.y * 0.95) + swayY;
 
-        // Camera aims slightly downward across the canyon toward distant spires
-        camera.lookAt(
-          mouseRef.current.x * 0.9,
-          -0.4 + (mouseRef.current.y * 0.6),
-          -38
-        );
+        landscapeShaderMat.uniforms.uMouse.value.set(targetX, targetY);
+        landscapeShaderMat.uniforms.uTime.value = elapsedTime;
+        landscapeShaderMat.uniforms.uPulse.value = pulseRef.current;
 
-        // Drifting canyon mist planes
+        // Drifting 3D canyon mist layers
         landscapeMistPlanes.forEach((mp) => {
-          mp.mesh.position.x = mp.baseX + Math.sin(elapsedTime * 0.25 + mp.baseY) * 3.6;
-          mp.mesh.material.opacity = mp.opacity * (0.85 + Math.sin(elapsedTime * 0.4 + mp.baseY) * 0.15);
+          mp.mesh.position.x = mp.baseX + Math.sin(elapsedTime * 0.28 + mp.baseY) * 1.6;
+          mp.mesh.material.opacity = mp.opacity * (0.8 + Math.sin(elapsedTime * 0.45 + mp.baseY) * 0.2);
         });
 
-        // Sun flare pulse on like / favorite trigger
-        if (sunLight) {
-          const baseIntensity = isDarkMode ? 2.4 : 3.2;
-          sunLight.intensity = baseIntensity + (pulseRef.current * 3.5);
+        // Floating sunlit dust motes / starlight embers
+        if (landscapeDustPoints) {
+          const pArr = landscapeDustPoints.geometry.attributes.position.array;
+          const pCount = pArr.length / 3;
+          for (let i = 0; i < pCount; i++) {
+            pArr[i * 3 + 1] += 0.0035;
+            pArr[i * 3] += Math.sin(elapsedTime * 0.6 + i) * 0.002;
+            if (pArr[i * 3 + 1] > 4.5) {
+              pArr[i * 3 + 1] = -4.5;
+            }
+          }
+          landscapeDustPoints.geometry.attributes.position.needsUpdate = true;
         }
       }
 
