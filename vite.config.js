@@ -9,12 +9,12 @@ export default defineConfig({
     host: true,
     proxy: {
       '/affirmations/api': {
-        target: 'http://localhost:3777',
+        target: 'http://localhost:3001',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/affirmations/, '')
       },
       '/api': {
-        target: 'http://localhost:3777',
+        target: 'http://localhost:3001',
         changeOrigin: true,
       }
     }
